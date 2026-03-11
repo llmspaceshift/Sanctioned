@@ -103,7 +103,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 /* LOG */
 #log-screen{justify-content:flex-start}
-.log-stats{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.log-stats{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
 .stat-cell{background:var(--surface);padding:.85rem 1rem;text-align:center}
 .stat-num{font-family:'IBM Plex Mono',monospace;font-size:1.35rem;font-weight:600}
 .stat-label{font-family:'IBM Plex Mono',monospace;font-size:.57rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.12rem}
@@ -119,6 +119,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .log-badge{font-family:'IBM Plex Mono',monospace;font-size:.57rem;letter-spacing:.07em;text-transform:uppercase;padding:.16rem .42rem;border-radius:3px;border:1px solid}
 .log-badge.answered{color:var(--good);border-color:var(--good)}.log-badge.no-answer{color:var(--danger);border-color:var(--danger)}
 .log-badge.callback{color:var(--warn);border-color:var(--warn)}.log-badge.booked{color:var(--booked);border-color:var(--booked)}
+.log-badge.dnc{color:var(--muted);border-color:var(--muted)}
 .log-time{font-family:'IBM Plex Mono',monospace;font-size:.57rem;color:var(--muted)}
 .log-footer{width:100%;padding:1rem 1.25rem;border-top:1px solid var(--border);flex-shrink:0}
 .btn-export{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:.75rem;cursor:pointer}
@@ -263,10 +264,13 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       <button class="btn-sm" onclick="goHome()">← Home</button>
     </div>
   </div>
+  <div class="date-tab-bar" id="log-date-tabs"></div>
   <div class="log-stats">
     <div class="stat-cell s-answered"><div class="stat-num" id="stat-answered">0</div><div class="stat-label">Answered</div></div>
     <div class="stat-cell s-callback"><div class="stat-num" id="stat-callback">0</div><div class="stat-label">Callback</div></div>
     <div class="stat-cell s-no-answer"><div class="stat-num" id="stat-no-answer">0</div><div class="stat-label">No Answer</div></div>
+    <div class="stat-cell s-booked"><div class="stat-num" id="stat-booked" style="color:var(--booked)">0</div><div class="stat-label">Booked</div></div>
+    <div class="stat-cell s-dnc"><div class="stat-num" id="stat-dnc" style="color:var(--muted)">0</div><div class="stat-label">DNC</div></div>
   </div>
   <div class="remaining-banner"><span id="remaining-count">0</span> contacts remaining</div>
   <div class="log-list" id="log-list"></div>
@@ -604,10 +608,15 @@ async function advance(){
   const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 
   if(selectedOutcome==='dnc'){
-    await sb.from('leads').delete().eq('id',c.id);
-    showToast('Lead removed (DNC)');
-    currentLeads.splice(currentIndex,1);
-    allLeadsForDate=allLeadsForDate.filter(r=>r.id!==c.id);
+    const now2=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    await sb.from('leads').update({status:'dnc',outcome:'dnc',call_time:now2}).eq('id',c.id);
+    showToast('Marked DNC');
+    // Update local copy
+    const dIdx=allLeadsForDate.findIndex(r=>r.id===c.id);
+    if(dIdx>-1) Object.assign(allLeadsForDate[dIdx],{status:'dnc',outcome:'dnc',call_time:now2});
+    // Rebuild callable list
+    currentLeads=allLeadsForDate.filter(isPending);
+    if(currentIndex>currentLeads.length) currentIndex=currentLeads.length;
     renderContact();
     return;
   }
@@ -646,15 +655,45 @@ function showDone(){
 // ── LOG ──
 async function showLog(){
   showScreen('log-screen');
-  if(!logDate){
-    // Use most recent date that has any leads at all
-    const {data}=await sb.from('leads')
-      .select('date_added')
-      .order('date_added',{ascending:false})
-      .limit(1);
-    logDate=(data&&data.length)?data[0].date_added:null;
+
+  // Fetch all distinct dates that have leads
+  const {data:allRows}=await sb.from('leads')
+    .select('date_added')
+    .order('date_added',{ascending:false});
+
+  const allDates=[...new Set((allRows||[]).map(r=>r.date_added))].sort().reverse();
+
+  if(!allDates.length){
+    document.getElementById('log-date-tabs').innerHTML='';
+    document.getElementById('log-list').innerHTML='<div class="empty-state">No leads uploaded yet.</div>';
+    return;
   }
-  if(logDate) await renderLog(logDate);
+
+  // If logDate isn't set or isn't in the list, default to most recent
+  if(!logDate||!allDates.includes(logDate)) logDate=allDates[0];
+
+  renderLogDateTabs(allDates);
+  await renderLog(logDate);
+}
+
+function renderLogDateTabs(dates){
+  const bar=document.getElementById('log-date-tabs');
+  // Log tabs use a neutral highlight (accent color)
+  bar.innerHTML=dates.map(d=>{
+    const active=d===logDate;
+    return `<button class="date-tab${active?' active joey':''}" onclick="switchLogDate('${d}')">${fmtDate(d)}</button>`;
+  }).join('');
+}
+
+async function switchLogDate(d){
+  logDate=d;
+  const tabs=document.querySelectorAll('#log-date-tabs .date-tab');
+  tabs.forEach(t=>{
+    const onclick=t.getAttribute('onclick');
+    const isActive=onclick && onclick.includes("'"+d+"'");
+    t.className='date-tab'+(isActive?' active joey':'');
+  });
+  await renderLog(d);
 }
 
 async function renderLog(date){
@@ -671,12 +710,14 @@ async function renderLog(date){
   const called=all.filter(isCalled);
   const remaining=all.filter(isPending).length;
 
-  const stats={answered:0,'no-answer':0,callback:0};
+  const stats={answered:0,'no-answer':0,callback:0,booked:0,dnc:0};
   called.forEach(r=>{ if(stats[r.outcome]!==undefined) stats[r.outcome]++; });
 
   document.getElementById('stat-answered').textContent=stats.answered;
   document.getElementById('stat-no-answer').textContent=stats['no-answer'];
   document.getElementById('stat-callback').textContent=stats.callback;
+  document.getElementById('stat-booked').textContent=stats.booked;
+  document.getElementById('stat-dnc').textContent=stats.dnc;
   document.getElementById('remaining-count').textContent=remaining;
 
   document.getElementById('log-list').innerHTML=called.length
@@ -862,11 +903,19 @@ async function parseAndUploadCSV(text){
 
   if(!contacts.length){ eb.textContent='No valid contacts found.'; eb.style.display='block'; return; }
 
+  // Check for existing DNC leads so we don't re-add them
+  const phones=contacts.map(c=>c.phone);
+  const {data:existing}=await sb.from('leads').select('phone,status').in('phone',phones);
+  const dncPhones=new Set((existing||[]).filter(r=>r.status==='dnc').map(r=>String(r.phone)));
+  const filtered=contacts.filter(c=>!dncPhones.has(c.phone));
+
+  if(!filtered.length){ eb.textContent='All contacts are on the DNC list.'; eb.style.display='block'; return; }
+
   // Build today's date string in local time — YYYY-MM-DD
   const now=new Date();
   const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
 
-  const rows=contacts.map((c,i)=>({
+  const rows=filtered.map((c,i)=>({
     name:c.name, job:c.job, phone:c.phone, city:c.city,
     assigned_to: i%2===0 ? 'joey' : 'john',
     status: 'pending',
@@ -874,15 +923,29 @@ async function parseAndUploadCSV(text){
     upload_date: today
   }));
 
-  const {error}=await sb.from('leads').insert(rows);
-  if(error){ eb.textContent='Upload failed: '+error.message; eb.style.display='block'; return; }
+  // Insert in batches of 50 to avoid payload limits
+  let inserted=0;
+  let lastError=null;
+  for(let i=0;i<rows.length;i+=50){
+    const batch=rows.slice(i,i+50);
+    const {error}=await sb.from('leads').insert(batch);
+    if(error){ lastError=error; }
+    else { inserted+=batch.length; }
+  }
+
+  if(inserted===0&&lastError){ eb.textContent='Upload failed: '+lastError.message; eb.style.display='block'; return; }
+
+  const skippedDnc=contacts.length-filtered.length;
 
   await refreshAdminSummary();
   await loadHomeData();
 
   const jC=rows.filter(r=>r.assigned_to==='joey').length;
   const nC=rows.filter(r=>r.assigned_to==='john').length;
-  suc.textContent=`✓ ${contacts.length} contacts uploaded — ${jC} Joey · ${nC} John`;
+  let msg=`✓ ${inserted} contacts uploaded — ${jC} Joey · ${nC} John`;
+  if(skippedDnc) msg+=` · ${skippedDnc} DNC skipped`;
+  if(lastError) msg+=` · some rows failed`;
+  suc.textContent=msg;
   suc.style.display='block';
   setTimeout(()=>suc.style.display='none',5000);
 }
