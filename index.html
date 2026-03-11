@@ -19,40 +19,29 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .screen{display:none;width:100%;min-height:100vh;flex-direction:column;align-items:center}
 .screen.active{display:flex}
 
-/* TOAST */
 #toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(4rem);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.72rem;padding:.65rem 1.2rem;border-radius:6px;z-index:999;transition:transform .25s ease;pointer-events:none;white-space:nowrap}
 #toast.show{transform:translateX(-50%) translateY(0)}
 
-/* LOADER */
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:1rem}
 .loading-screen.hidden{display:none}
 .spinner{width:1.2rem;height:1.2rem;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted2);letter-spacing:.15em;text-transform:uppercase}
 
-/* TOP NAV — shared across all screens */
+/* TOP NAV */
 .top-nav{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;flex-shrink:0}
 .top-nav-left{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);cursor:pointer}
 .top-nav-left:hover{color:var(--muted2)}
 .top-nav-right{display:flex;align-items:center;gap:.5rem}
 .nav-btn{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);cursor:pointer;padding:.28rem .5rem;border-radius:3px;transition:color .15s,background .15s}
 .nav-btn:hover{color:var(--text);background:var(--surface2)}
-.nav-btn.active{color:var(--accent)}
 .nav-divider{width:1px;height:.9rem;background:var(--border2)}
+.btn-sm{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.3rem .55rem;cursor:pointer;text-transform:uppercase}
 
 /* LANDING */
 #landing-screen{justify-content:flex-start}
 .landing-body{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;gap:1.25rem;flex:1;justify-content:center}
 .landing-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;color:var(--muted2)}
-.landing-date{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted2);margin-top:-.5rem}
-
-/* DATE STRIP */
-.date-strip{width:100%;display:flex;gap:.45rem;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.25rem}
-.date-strip::-webkit-scrollbar{display:none}
-.date-chip{flex-shrink:0;background:var(--surface);border:1px solid var(--border2);border-radius:4px;color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;padding:.38rem .75rem;cursor:pointer;transition:all .15s}
-.date-chip.active{border-color:var(--accent);color:var(--accent)}
-
-/* TM CARDS */
 .tm-cards{width:100%;display:flex;flex-direction:column;gap:.85rem}
 .tm-card{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;cursor:pointer;position:relative;overflow:hidden;transition:transform .12s,border-color .2s}
 .tm-card:active{transform:scale(.98)}
@@ -66,6 +55,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .tm-card-arrow{position:absolute;top:50%;right:1.25rem;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:1rem;color:var(--muted)}
 .sync-note{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);text-align:center}
 
+/* DATE TABS — inside dialer */
+.date-tab-bar{width:100%;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0}
+.date-tab-bar::-webkit-scrollbar{display:none}
+.date-tab{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.6rem 1rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;transition:color .15s,border-color .15s}
+.date-tab.active.joey{color:var(--joey);border-bottom-color:var(--joey)}
+.date-tab.active.john{color:var(--john);border-bottom-color:var(--john)}
+.date-tab:hover:not(.active){color:var(--muted2)}
+
 /* DIALER */
 #dialer-screen{justify-content:flex-start}
 .dialer-nav-who{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase}
@@ -75,7 +72,6 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .progress-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
 .progress-bar-fill.joey{background:var(--joey)}.progress-bar-fill.john{background:var(--john)}
 .progress-nums{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted2)}
-.btn-sm{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.3rem .55rem;cursor:pointer;text-transform:uppercase}
 .dialer-body{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;padding:1.5rem 1.5rem 2rem;gap:1rem}
 .contact-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden}
 .contact-card-top{height:2px;width:100%}
@@ -166,7 +162,8 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .btn-logout{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 
 /* DONE */
-#done-screen{justify-content:center;align-items:center;padding:2rem;gap:1.5rem;text-align:center}
+#done-screen{justify-content:flex-start}
+.done-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem;text-align:center}
 .done-icon{font-size:2.25rem}
 .done-title{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 .done-title.joey{color:var(--joey)}.done-title.john{color:var(--john)}
@@ -180,7 +177,6 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   <div class="spinner"></div>
   <div class="loading-text">Connecting...</div>
 </div>
-
 <div id="toast"></div>
 
 <!-- LANDING -->
@@ -196,15 +192,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     </div>
   </div>
   <div class="landing-body">
-    <div class="landing-eyebrow">Today's Leads</div>
-    <div class="date-strip" id="date-strip"></div>
+    <div class="landing-eyebrow">Who's calling?</div>
     <div class="tm-cards">
-      <div class="tm-card joey" onclick="startSession('joey')">
+      <div class="tm-card joey" onclick="openTM('joey')">
         <div class="tm-card-name">Joey</div>
         <div class="tm-card-meta" id="joey-meta">Loading...</div>
         <div class="tm-card-arrow">→</div>
       </div>
-      <div class="tm-card john" onclick="startSession('john')">
+      <div class="tm-card john" onclick="openTM('john')">
         <div class="tm-card-name">John</div>
         <div class="tm-card-meta" id="john-meta">Loading...</div>
         <div class="tm-card-arrow">→</div>
@@ -220,7 +215,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <div class="dialer-nav-who" id="dialer-who">Joey</div>
     <div class="progress-wrap">
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
-      <div class="progress-nums" id="progress-nums">0 / 0</div>
+      <div class="progress-nums" id="progress-nums">— / —</div>
     </div>
     <div class="top-nav-right">
       <button class="nav-btn" onclick="showLog()">Log</button>
@@ -228,6 +223,8 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       <button class="btn-sm" onclick="goHome()">← Home</button>
     </div>
   </div>
+  <!-- date tabs rendered here -->
+  <div class="date-tab-bar" id="dialer-date-tabs"></div>
   <div class="dialer-body">
     <div class="contact-card">
       <div class="contact-card-top" id="card-top"></div>
@@ -293,9 +290,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 <div id="admin-screen" class="screen">
   <div class="top-nav">
     <div class="top-nav-left" style="cursor:default">Admin</div>
-    <div class="top-nav-right">
-      <button class="btn-sm" onclick="goHome()">← Home</button>
-    </div>
+    <div class="top-nav-right"><button class="btn-sm" onclick="goHome()">← Home</button></div>
   </div>
   <div class="admin-body">
     <div id="admin-login-wrap" style="display:flex;flex-direction:column;gap:1rem">
@@ -324,7 +319,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       <div class="upload-success" id="upload-success"></div>
       <div class="error-bar" id="error-bar"></div>
       <div class="summary-box" id="today-summary" style="display:none">
-        <div class="summary-title">Today's Split</div>
+        <div class="summary-title">Today's Upload</div>
         <div class="summary-row"><div class="summary-name" style="color:var(--joey)">Joey</div><div class="summary-stats" id="summary-joey">—</div></div>
         <div class="summary-row"><div class="summary-name" style="color:var(--john)">John</div><div class="summary-stats" id="summary-john">—</div></div>
       </div>
@@ -342,7 +337,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       <button class="nav-btn" onclick="showBooked()">Booked</button>
     </div>
   </div>
-  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem;text-align:center">
+  <div class="done-body">
     <div class="done-icon">🏁</div>
     <div class="done-title" id="done-title">Done</div>
     <div class="done-sub" id="done-sub"></div>
@@ -353,11 +348,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 <script>
 const SUPABASE_URL='https://spjreskefeznahqcivhf.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwanJlc2tlZmV6bmFocWNpdmhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDE1NTQsImV4cCI6MjA4ODgxNzU1NH0.LA_M6ZcOelvdN5t_YMJyN3YrmpGdQ5rJGxOr9DDFOBs';
-const ADMIN_USER='admin',ADMIN_PASS='1234';
+const ADMIN_USER='admin', ADMIN_PASS='1234';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let currentUser=null,currentLeads=[],currentIndex=0,selectedOutcome=null;
-let adminLoggedIn=false,selectedDate=todayKey();
+let currentUser=null, currentLeads=[], currentIndex=0, selectedOutcome=null;
+let adminLoggedIn=false;
+let dialerDate=null;   // which date tab is active in dialer
+let logDate=null;
+let tmDates={joey:[], john:[]};  // available dates per TM
 
 function todayKey(){return new Date().toISOString().slice(0,10);}
 function friendlyDate(k){
@@ -373,7 +371,7 @@ function fmtPhone(n){
 }
 function showToast(msg,ms=2500){
   const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
+  t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),ms);
 }
 function showScreen(id){
@@ -381,41 +379,84 @@ function showScreen(id){
   document.getElementById(id).classList.add('active');
 }
 
-async function goHome(){showScreen('landing-screen');await loadHomeData();}
-
+// ── INIT ──
 async function init(){
   await loadHomeData();
   document.getElementById('loading-screen').classList.add('hidden');
 }
 
-async function loadHomeData(){
-  const {data:rows}=await sb.from('leads').select('date_added,assigned_to,status,outcome').order('date_added',{ascending:false});
-  if(!rows) return;
-
-  const dates=[...new Set(rows.map(r=>r.date_added))].sort().reverse();
-  if(!dates.includes(todayKey())) dates.unshift(todayKey());
-  if(!dates.includes(selectedDate)) selectedDate=dates[0];
-
-  // date strip
-  const strip=document.getElementById('date-strip');
-  strip.innerHTML=dates.map(d=>`<div class="date-chip${d===selectedDate?' active':''}" onclick="selectDate('${d}')">${friendlyDate(d)}</div>`).join('');
-
-  const day=rows.filter(r=>r.date_added===selectedDate);
-  const joeyPending=day.filter(r=>r.assigned_to==='joey'&&r.status==='pending').length;
-  const johnPending=day.filter(r=>r.assigned_to==='john'&&r.status==='pending').length;
-  const joeyCalled=day.filter(r=>r.assigned_to==='joey'&&r.outcome).length;
-  const johnCalled=day.filter(r=>r.assigned_to==='john'&&r.outcome).length;
-
-  document.getElementById('joey-meta').textContent=joeyPending+' remaining · '+joeyCalled+' called';
-  document.getElementById('john-meta').textContent=johnPending+' remaining · '+johnCalled+' called';
-  document.getElementById('sync-note').textContent='Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+async function goHome(){
+  showScreen('landing-screen');
+  await loadHomeData();
 }
 
-function selectDate(d){selectedDate=d;loadHomeData();}
+async function loadHomeData(){
+  // get all leads summarised
+  const {data:rows}=await sb.from('leads')
+    .select('date_added,assigned_to,status,outcome')
+    .order('date_added',{ascending:false});
+  if(!rows) return;
 
-// ── DIALER ──
-async function startSession(user){
-  currentUser=user;selectedOutcome=null;
+  // most recent date with pending leads per TM — show on card
+  const joeyRows=rows.filter(r=>r.assigned_to==='joey');
+  const johnRows=rows.filter(r=>r.assigned_to==='john');
+
+  const latestJoeyDate=getMostRecentDate(joeyRows);
+  const latestJohnDate=getMostRecentDate(johnRows);
+
+  const joeyPending=joeyRows.filter(r=>r.date_added===latestJoeyDate&&r.status==='pending').length;
+  const johnPending=johnRows.filter(r=>r.date_added===latestJohnDate&&r.status==='pending').length;
+  const joeyCalled=joeyRows.filter(r=>r.date_added===latestJoeyDate&&r.outcome).length;
+  const johnCalled=johnRows.filter(r=>r.date_added===latestJohnDate&&r.outcome).length;
+
+  document.getElementById('joey-meta').textContent=
+    latestJoeyDate ? joeyPending+' remaining · '+joeyCalled+' called · '+friendlyDate(latestJoeyDate) : 'No leads uploaded';
+  document.getElementById('john-meta').textContent=
+    latestJohnDate ? johnPending+' remaining · '+johnCalled+' called · '+friendlyDate(latestJohnDate) : 'No leads uploaded';
+
+  document.getElementById('sync-note').textContent='Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+
+  // cache dates per TM
+  tmDates.joey=[...new Set(joeyRows.map(r=>r.date_added))].sort().reverse();
+  tmDates.john=[...new Set(johnRows.map(r=>r.date_added))].sort().reverse();
+}
+
+function getMostRecentDate(rows){
+  // prefer dates with pending leads
+  const withPending=[...new Set(rows.filter(r=>r.status==='pending').map(r=>r.date_added))].sort().reverse();
+  if(withPending.length) return withPending[0];
+  // fall back to most recent date at all
+  const all=[...new Set(rows.map(r=>r.date_added))].sort().reverse();
+  return all[0]||null;
+}
+
+// ── OPEN TM — show date tabs, load most recent ──
+async function openTM(user){
+  currentUser=user;
+  const dates=tmDates[user]||[];
+
+  if(!dates.length){
+    showToast('No leads uploaded yet');
+    return;
+  }
+
+  // default to most recent date with pending leads
+  const {data:pending}=await sb.from('leads')
+    .select('date_added')
+    .eq('assigned_to',user)
+    .eq('status','pending')
+    .order('date_added',{ascending:false})
+    .limit(1);
+
+  dialerDate=(pending&&pending.length)?pending[0].date_added:dates[0];
+
+  setupDialerUI(user);
+  renderDateTabs(user,dates);
+  showScreen('dialer-screen');
+  await loadLeadsForDate(user,dialerDate);
+}
+
+function setupDialerUI(user){
   const isJoey=user==='joey';
   document.getElementById('dialer-who').textContent=isJoey?'Joey':'John';
   document.getElementById('dialer-who').className='dialer-nav-who '+(isJoey?'joey':'john');
@@ -423,13 +464,62 @@ async function startSession(user){
   document.getElementById('card-top').className='contact-card-top '+user;
   document.getElementById('c-job').className='tag job'+(isJoey?'':' john-user');
   document.getElementById('call-btn').className='call-btn'+(isJoey?'':' john-user');
-  showScreen('dialer-screen');
-  const {data}=await sb.from('leads').select('*').eq('assigned_to',user).eq('status','pending').eq('date_added',selectedDate).order('created_at',{ascending:true});
-  currentLeads=data||[];currentIndex=0;
+}
+
+function renderDateTabs(user,dates){
+  const bar=document.getElementById('dialer-date-tabs');
+  bar.innerHTML=dates.map(d=>`
+    <button class="date-tab${d===dialerDate?' active '+user:''}" onclick="switchDialerDate('${d}')">${friendlyDate(d)}</button>
+  `).join('');
+}
+
+async function switchDialerDate(d){
+  dialerDate=d;
+  // update tab highlights
+  document.querySelectorAll('.date-tab').forEach(t=>{
+    const label=t.textContent.trim();
+    const match=(d===todayKey()&&label==='Today')||label===friendlyDate(d);
+    t.className='date-tab'+(match?' active '+currentUser:'');
+  });
+  resetDialerState();
+  await loadLeadsForDate(currentUser,d);
+}
+
+async function loadLeadsForDate(user,date){
+  const {data}=await sb.from('leads')
+    .select('*')
+    .eq('assigned_to',user)
+    .eq('date_added',date)
+    .eq('status','pending')
+    .order('created_at',{ascending:true});
+  currentLeads=data||[];
+  currentIndex=0;
   renderContact();
 }
 
+// ── DIALER ──
+function resetDialerState(){
+  selectedOutcome=null;
+  document.getElementById('outcome-section').classList.remove('visible');
+  document.getElementById('next-btn').classList.remove('visible');
+  ['answered','no-answer','callback','booked','dnc'].forEach(o=>
+    document.getElementById('btn-'+o).className='outcome-btn'
+  );
+}
+
 function renderContact(){
+  resetDialerState();
+  if(!currentLeads.length){
+    // no pending on this date
+    document.getElementById('c-name').textContent='All done';
+    document.getElementById('c-job').textContent='—';
+    document.getElementById('c-city').textContent='—';
+    document.getElementById('c-number').textContent='—';
+    document.getElementById('call-btn').href='#';
+    document.getElementById('progress-nums').textContent='0 remaining';
+    document.getElementById('progress-fill').style.width='100%';
+    return;
+  }
   if(currentIndex>=currentLeads.length){showDone();return;}
   const c=currentLeads[currentIndex];
   document.getElementById('c-name').textContent=c.name||'—';
@@ -440,10 +530,6 @@ function renderContact(){
   const total=currentLeads.length;
   document.getElementById('progress-nums').textContent=(currentIndex+1)+' / '+total;
   document.getElementById('progress-fill').style.width=(currentIndex/total*100)+'%';
-  selectedOutcome=null;
-  document.getElementById('outcome-section').classList.remove('visible');
-  document.getElementById('next-btn').classList.remove('visible');
-  ['answered','no-answer','callback','booked','dnc'].forEach(o=>document.getElementById('btn-'+o).className='outcome-btn');
 }
 
 function onCall(){
@@ -455,46 +541,73 @@ function onCall(){
 
 function selectOutcome(o){
   selectedOutcome=o;
-  ['answered','no-answer','callback','booked','dnc'].forEach(x=>document.getElementById('btn-'+x).className='outcome-btn');
+  ['answered','no-answer','callback','booked','dnc'].forEach(x=>
+    document.getElementById('btn-'+x).className='outcome-btn'
+  );
   document.getElementById('btn-'+o).className='outcome-btn sel-'+o;
 }
 
 async function advance(){
   if(!selectedOutcome){showToast('Select an outcome first');return;}
   const c=currentLeads[currentIndex];
-  const updates={outcome:selectedOutcome,call_time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  const updates={
+    outcome:selectedOutcome,
+    call_time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  };
   if(selectedOutcome==='booked'){
-    updates.status='booked';updates.date_booked=todayKey();
+    updates.status='booked'; updates.date_booked=todayKey();
   } else if(selectedOutcome==='dnc'){
     await sb.from('leads').delete().eq('id',c.id);
     showToast('Lead removed (DNC)');
     currentLeads.splice(currentIndex,1);
-    renderContact();return;
+    renderContact(); return;
   } else {
     updates.status='called';
   }
   await sb.from('leads').update(updates).eq('id',c.id);
-  currentIndex++;renderContact();
+  currentIndex++;
+  renderContact();
 }
 
 // ── LOG ──
 async function showLog(){
   showScreen('log-screen');
-  document.getElementById('log-title').textContent='Log — '+friendlyDate(selectedDate);
-  const {data}=await sb.from('leads').select('*').eq('date_added',selectedDate).not('outcome','is',null).order('call_time',{ascending:false});
+  // default to most recent date across all leads
+  if(!logDate){
+    const {data}=await sb.from('leads').select('date_added').order('date_added',{ascending:false}).limit(1);
+    logDate=(data&&data.length)?data[0].date_added:todayKey();
+  }
+  await renderLog(logDate);
+}
+
+async function renderLog(date){
+  logDate=date;
+  document.getElementById('log-title').textContent='Log — '+friendlyDate(date);
+  const {data}=await sb.from('leads')
+    .select('*').eq('date_added',date)
+    .not('outcome','is',null)
+    .order('call_time',{ascending:false});
   const rows=data||[];
   const stats={answered:0,'no-answer':0,callback:0};
   rows.forEach(r=>{if(stats[r.outcome]!==undefined)stats[r.outcome]++;});
   document.getElementById('stat-answered').textContent=stats.answered;
   document.getElementById('stat-no-answer').textContent=stats['no-answer'];
   document.getElementById('stat-callback').textContent=stats.callback;
-  const {count}=await sb.from('leads').select('*',{count:'exact',head:true}).eq('date_added',selectedDate).eq('status','pending');
+  const {count}=await sb.from('leads').select('*',{count:'exact',head:true}).eq('date_added',date).eq('status','pending');
   document.getElementById('remaining-count').textContent=count||0;
-  document.getElementById('log-list').innerHTML=rows.length?rows.map(r=>`
-    <div class="log-item">
-      <div class="log-info"><div class="log-name">${r.name}</div><div class="log-sub">${r.job||''}${r.city?' · '+r.city:''} · ${r.assigned_to}</div></div>
-      <div class="log-right"><span class="log-badge ${r.outcome}">${r.outcome}</span><span class="log-time">${r.call_time||''}</span></div>
-    </div>`).join(''):'<div class="empty-state">No calls logged for this day.</div>';
+  document.getElementById('log-list').innerHTML=rows.length
+    ?rows.map(r=>`
+      <div class="log-item">
+        <div class="log-info">
+          <div class="log-name">${r.name}</div>
+          <div class="log-sub">${r.job||''}${r.city?' · '+r.city:''} · ${r.assigned_to}</div>
+        </div>
+        <div class="log-right">
+          <span class="log-badge ${r.outcome}">${r.outcome}</span>
+          <span class="log-time">${r.call_time||''}</span>
+        </div>
+      </div>`).join('')
+    :'<div class="empty-state">No calls logged for this day.</div>';
 }
 
 // ── BOOKED ──
@@ -502,24 +615,26 @@ async function showBooked(){
   showScreen('booked-screen');
   const {data}=await sb.from('leads').select('*').eq('status','booked').order('date_booked',{ascending:false});
   const rows=data||[];
-  document.getElementById('booked-list').innerHTML=rows.length?rows.map(r=>`
-    <div class="booked-item">
-      <div class="booked-name">${r.name}</div>
-      <div class="booked-phone">${fmtPhone(r.phone)}</div>
-      <div class="booked-meta">
-        <span class="booked-tag job">${r.job||'—'}</span>
-        <span class="booked-tag info">${r.assigned_to}</span>
-        <span class="booked-tag info">${r.date_booked||'—'}</span>
-        ${r.city?`<span class="booked-tag info">${r.city}</span>`:''}
-      </div>
-    </div>`).join(''):'<div class="empty-state">No booked leads yet.</div>';
+  document.getElementById('booked-list').innerHTML=rows.length
+    ?rows.map(r=>`
+      <div class="booked-item">
+        <div class="booked-name">${r.name}</div>
+        <div class="booked-phone">${fmtPhone(r.phone)}</div>
+        <div class="booked-meta">
+          <span class="booked-tag job">${r.job||'—'}</span>
+          <span class="booked-tag info">${r.assigned_to}</span>
+          <span class="booked-tag info">${r.date_booked||'—'}</span>
+          ${r.city?`<span class="booked-tag info">${r.city}</span>`:''}
+        </div>
+      </div>`).join('')
+    :'<div class="empty-state">No booked leads yet.</div>';
 }
 
 // ── DONE ──
 function showDone(){
   document.getElementById('done-title').textContent=(currentUser==='joey'?'Joey':'John')+' — Done';
   document.getElementById('done-title').className='done-title '+currentUser;
-  document.getElementById('done-sub').textContent='All leads for '+friendlyDate(selectedDate)+' completed.';
+  document.getElementById('done-sub').textContent='All leads for '+friendlyDate(dialerDate)+' completed.';
   showScreen('done-screen');
 }
 
@@ -528,18 +643,28 @@ function showAdmin(){showScreen('admin-screen');if(adminLoggedIn)showAdminDash()
 function doLogin(){
   const u=document.getElementById('admin-user').value.trim();
   const p=document.getElementById('admin-pass').value;
-  if(u===ADMIN_USER&&p===ADMIN_PASS){adminLoggedIn=true;document.getElementById('login-error').style.display='none';showAdminDash();}
-  else{document.getElementById('login-error').style.display='block';document.getElementById('admin-pass').value='';}
+  if(u===ADMIN_USER&&p===ADMIN_PASS){
+    adminLoggedIn=true;
+    document.getElementById('login-error').style.display='none';
+    showAdminDash();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('admin-pass').value='';
+  }
 }
 function doLogout(){
   adminLoggedIn=false;
-  document.getElementById('admin-user').value='';document.getElementById('admin-pass').value='';
+  document.getElementById('admin-user').value='';
+  document.getElementById('admin-pass').value='';
   document.getElementById('admin-login-wrap').style.display='flex';
   document.getElementById('admin-dash').style.display='none';
 }
 async function showAdminDash(){
   document.getElementById('admin-login-wrap').style.display='none';
   document.getElementById('admin-dash').style.display='flex';
+  await refreshAdminSummary();
+}
+async function refreshAdminSummary(){
   const today=todayKey();
   const {data}=await sb.from('leads').select('assigned_to,outcome').eq('date_added',today);
   if(!data) return;
@@ -572,7 +697,9 @@ function parseCSVLine(line){
   const res=[];let cur='',inQ=false;
   for(let i=0;i<line.length;i++){
     const c=line[i];
-    if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){res.push(cur.trim());cur='';}else{cur+=c;}
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur.trim());cur='';}
+    else{cur+=c;}
   }
   res.push(cur.trim());return res;
 }
@@ -590,10 +717,10 @@ function detectFormat(lines){
     if(/city|location/.test(h)) cityCol=i;
   });
   if(phoneCol===-1){
-    dataRows.forEach(row=>row.forEach((v,i)=>{
+    (dataRows[0]||[]).forEach((v,i)=>{
       const d=v.replace(/\D/g,'');
       if(d.length>=9&&d.length<=15&&phoneCol===-1) phoneCol=i;
-    }));
+    });
   }
   const firstData=dataRows[0]||[];
   if(namCol===-1){
@@ -630,11 +757,22 @@ async function parseAndUploadCSV(text){
     contacts.push({name,job,phone,city});
   }
   if(!contacts.length){eb.textContent='No valid contacts found.';eb.style.display='block';return;}
+
   const today=todayKey();
-  const rows=contacts.map((c,i)=>({name:c.name,job:c.job,phone:c.phone,city:c.city,assigned_to:i%2===0?'joey':'john',status:'pending',date_added:today}));
+  const rows=contacts.map((c,i)=>({
+    name:c.name,job:c.job,phone:c.phone,city:c.city,
+    assigned_to:i%2===0?'joey':'john',
+    status:'pending',
+    date_added:today,
+    upload_date:today
+  }));
+
   const {error}=await sb.from('leads').insert(rows);
   if(error){eb.textContent='Upload failed: '+error.message;eb.style.display='block';return;}
-  await showAdminDash();
+
+  await refreshAdminSummary();
+  await loadHomeData();
+
   const jC=rows.filter(r=>r.assigned_to==='joey').length;
   const nC=rows.filter(r=>r.assigned_to==='john').length;
   suc.textContent=`✓ ${contacts.length} contacts uploaded — ${jC} Joey · ${nC} John`;
@@ -642,15 +780,16 @@ async function parseAndUploadCSV(text){
   setTimeout(()=>suc.style.display='none',5000);
 }
 
+// ── EXPORT ──
 async function exportLog(){
-  const {data}=await sb.from('leads').select('*').eq('date_added',selectedDate).not('outcome','is',null);
+  const {data}=await sb.from('leads').select('*').eq('date_added',logDate).not('outcome','is',null);
   if(!data?.length){showToast('Nothing to export');return;}
   const rows=[['Name','Job','City','Phone','Assigned To','Outcome','Call Time','Date']];
   data.forEach(r=>rows.push([r.name,r.job,r.city,r.phone,r.assigned_to,r.outcome,r.call_time,r.date_added]));
   const csv=rows.map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='log-'+selectedDate+'.csv';a.click();
+  a.download='log-'+logDate+'.csv';a.click();
 }
 
 init();
