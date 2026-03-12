@@ -207,7 +207,6 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       </div>
     </div>
     <div class="sync-note" id="sync-note"></div>
-    <div id="db-test" style="font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);text-align:center;padding:.5rem;max-width:340px;word-break:break-all"></div>
   </div>
 </div>
 
@@ -407,38 +406,6 @@ function showScreen(id){
 async function init(){
   await loadHomeData();
   document.getElementById('loading-screen').classList.add('hidden');
-  // Run DB diagnostic
-  runDbTest();
-}
-
-async function runDbTest(){
-  const el=document.getElementById('db-test');
-  const log=[];
-  try{
-    // Test 1: Read
-    const {data:r1,error:e1}=await sb.from('leads').select('id,status,outcome').limit(1);
-    if(e1) log.push('READ FAIL: '+e1.message);
-    else if(!r1||!r1.length) log.push('READ OK but 0 rows (empty table)');
-    else {
-      log.push('READ OK — id: '+r1[0].id+' status: '+r1[0].status);
-      // Test 2: Write — set notes to a test string, then read it back, then clear it
-      const testId=r1[0].id;
-      const testVal='dbtest_'+Date.now();
-      const {error:e2,data:w1}=await sb.from('leads').update({notes:testVal}).eq('id',testId).select('id,notes');
-      if(e2) log.push('WRITE FAIL: '+e2.message);
-      else if(!w1||!w1.length) log.push('WRITE returned 0 rows — update silently failed');
-      else if(w1[0].notes===testVal){
-        log.push('WRITE OK — verified');
-        // Clean up
-        await sb.from('leads').update({notes:null}).eq('id',testId);
-      } else {
-        log.push('WRITE MISMATCH — wrote "'+testVal+'" got "'+w1[0].notes+'"');
-      }
-    }
-  }catch(ex){
-    log.push('EXCEPTION: '+ex.message);
-  }
-  el.textContent=log.join(' | ');
 }
 
 async function goHome(){
@@ -643,28 +610,22 @@ async function advance(){
 
   let updates;
   if(selectedOutcome==='dnc'){
-    updates={status:'dnc',outcome:'dnc',call_time:now};
+    updates={status:'dnc',outcome:'dnc',date_called:now};
   } else if(selectedOutcome==='booked'){
     const t=new Date();
-    updates={outcome:'booked',status:'booked',call_time:now,
+    updates={outcome:'booked',status:'booked',date_called:now,
       date_booked:t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
   } else {
-    updates={outcome:selectedOutcome,status:'called',call_time:now};
+    updates={outcome:selectedOutcome,status:'called',date_called:now};
   }
 
-  // Match on phone + assigned_to + date_added to uniquely target this lead
-  const {error}=await sb.from('leads')
-    .update(updates)
-    .eq('phone',c.phone)
-    .eq('assigned_to',c.assigned_to)
-    .eq('date_added',c.date_added);
-
+  const {error,data:updated}=await sb.from('leads').update(updates).eq('id',c.id).select();
   if(error){ showToast('Save failed: '+error.message,4000); return; }
+  if(!updated||!updated.length){ showToast('Save failed — 0 rows matched',4000); return; }
 
   showToast(selectedOutcome==='dnc'?'Marked DNC':selectedOutcome==='booked'?'Booked ✓':'Logged: '+selectedOutcome);
 
-  // Update local copy
-  const idx=allLeadsForDate.findIndex(r=>r.phone===c.phone&&r.assigned_to===c.assigned_to);
+  const idx=allLeadsForDate.findIndex(r=>r.id===c.id);
   if(idx>-1) Object.assign(allLeadsForDate[idx], updates);
 
   currentLeads=allLeadsForDate.filter(isPending);
@@ -733,7 +694,7 @@ async function renderLog(date){
   const {data:rows}=await sb.from('leads')
     .select('*')
     .eq('date_added',date)
-    .order('call_time',{ascending:false});
+    .order('date_called',{ascending:false});
 
   const all=rows||[];
   const called=all.filter(isCalled);
@@ -758,7 +719,7 @@ async function renderLog(date){
           </div>
           <div class="log-right">
             <span class="log-badge ${r.outcome}">${r.outcome}</span>
-            <span class="log-time">${r.call_time||''}</span>
+            <span class="log-time">${r.date_called||''}</span>
           </div>
         </div>`).join('')
     : '<div class="empty-state">No calls logged for this day.</div>';
@@ -987,7 +948,7 @@ async function exportLog(){
     .not('outcome','is',null);
   if(!data?.length){ showToast('Nothing to export'); return; }
   const rows=[['Name','Job','City','Phone','Assigned To','Outcome','Call Time','Date']];
-  data.forEach(r=>rows.push([r.name,r.job,r.city,r.phone,r.assigned_to,r.outcome,r.call_time,r.date_added]));
+  data.forEach(r=>rows.push([r.name,r.job,r.city,r.phone,r.assigned_to,r.outcome,r.date_called,r.date_added]));
   const csv=rows.map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
