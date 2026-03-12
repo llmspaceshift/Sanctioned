@@ -207,6 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       </div>
     </div>
     <div class="sync-note" id="sync-note"></div>
+    <div id="db-test" style="font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);text-align:center;padding:.5rem;max-width:340px;word-break:break-all"></div>
   </div>
 </div>
 
@@ -406,6 +407,38 @@ function showScreen(id){
 async function init(){
   await loadHomeData();
   document.getElementById('loading-screen').classList.add('hidden');
+  // Run DB diagnostic
+  runDbTest();
+}
+
+async function runDbTest(){
+  const el=document.getElementById('db-test');
+  const log=[];
+  try{
+    // Test 1: Read
+    const {data:r1,error:e1}=await sb.from('leads').select('id,status,outcome').limit(1);
+    if(e1) log.push('READ FAIL: '+e1.message);
+    else if(!r1||!r1.length) log.push('READ OK but 0 rows (empty table)');
+    else {
+      log.push('READ OK — id: '+r1[0].id+' status: '+r1[0].status);
+      // Test 2: Write — set notes to a test string, then read it back, then clear it
+      const testId=r1[0].id;
+      const testVal='dbtest_'+Date.now();
+      const {error:e2,data:w1}=await sb.from('leads').update({notes:testVal}).eq('id',testId).select('id,notes');
+      if(e2) log.push('WRITE FAIL: '+e2.message);
+      else if(!w1||!w1.length) log.push('WRITE returned 0 rows — update silently failed');
+      else if(w1[0].notes===testVal){
+        log.push('WRITE OK — verified');
+        // Clean up
+        await sb.from('leads').update({notes:null}).eq('id',testId);
+      } else {
+        log.push('WRITE MISMATCH — wrote "'+testVal+'" got "'+w1[0].notes+'"');
+      }
+    }
+  }catch(ex){
+    log.push('EXCEPTION: '+ex.message);
+  }
+  el.textContent=log.join(' | ');
 }
 
 async function goHome(){
@@ -605,42 +638,38 @@ function selectOutcome(o){
 async function advance(){
   if(!selectedOutcome){ showToast('Select an outcome first'); return; }
   const c=currentLeads[currentIndex];
+  if(!c){ showToast('No contact'); return; }
   const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 
+  let updates;
   if(selectedOutcome==='dnc'){
-    const now2=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    await sb.from('leads').update({status:'dnc',outcome:'dnc',call_time:now2}).eq('id',c.id);
-    showToast('Marked DNC');
-    // Update local copy
-    const dIdx=allLeadsForDate.findIndex(r=>r.id===c.id);
-    if(dIdx>-1) Object.assign(allLeadsForDate[dIdx],{status:'dnc',outcome:'dnc',call_time:now2});
-    // Rebuild callable list
-    currentLeads=allLeadsForDate.filter(isPending);
-    if(currentIndex>currentLeads.length) currentIndex=currentLeads.length;
-    renderContact();
-    return;
-  }
-
-  const updates={ outcome:selectedOutcome, call_time:now };
-  if(selectedOutcome==='booked'){
-    updates.status='booked';
-    // Store today's date as a plain YYYY-MM-DD string
+    updates={status:'dnc',outcome:'dnc',call_time:now};
+  } else if(selectedOutcome==='booked'){
     const t=new Date();
-    updates.date_booked=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    updates={outcome:'booked',status:'booked',call_time:now,
+      date_booked:t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
   } else {
-    updates.status='called';
+    updates={outcome:selectedOutcome,status:'called',call_time:now};
   }
 
-  await sb.from('leads').update(updates).eq('id',c.id);
-  // Update local copy too
-  const idx=allLeadsForDate.findIndex(r=>r.id===c.id);
+  // Match on phone + assigned_to + date_added to uniquely target this lead
+  const {error}=await sb.from('leads')
+    .update(updates)
+    .eq('phone',c.phone)
+    .eq('assigned_to',c.assigned_to)
+    .eq('date_added',c.date_added);
+
+  if(error){ showToast('Save failed: '+error.message,4000); return; }
+
+  showToast(selectedOutcome==='dnc'?'Marked DNC':selectedOutcome==='booked'?'Booked ✓':'Logged: '+selectedOutcome);
+
+  // Update local copy
+  const idx=allLeadsForDate.findIndex(r=>r.phone===c.phone&&r.assigned_to===c.assigned_to);
   if(idx>-1) Object.assign(allLeadsForDate[idx], updates);
 
-  currentIndex++;
-  // Refresh currentLeads from updated allLeadsForDate
   currentLeads=allLeadsForDate.filter(isPending);
-  // Keep index valid
-  if(currentIndex>currentLeads.length) currentIndex=currentLeads.length;
+  if(currentIndex>=currentLeads.length) currentIndex=Math.max(0,currentLeads.length-1);
+  if(currentLeads.length===0){ showDone(); return; }
   renderContact();
 }
 
@@ -983,9 +1012,9 @@ async function deleteDuplicates(){
     const phone=String(row.phone||'').replace(/\D/g,'');
     if(!phone) continue;
     if(seen[phone]){
-      toDelete.push(row.id);
+      toDelete.push(phone);
     } else {
-      seen[phone]=row.id;
+      seen[phone]=true;
     }
   }
 
@@ -995,12 +1024,20 @@ async function deleteDuplicates(){
     return;
   }
 
-  // Delete in batches of 50
+  // Delete duplicates — for each dup phone, keep the first row and delete the rest
+  // Re-fetch grouped by phone to get all ids per phone
   let deleted=0;
-  for(let i=0;i<toDelete.length;i+=50){
-    const batch=toDelete.slice(i,i+50);
-    const {error:delErr}=await sb.from('leads').delete().in('id',batch);
-    if(!delErr) deleted+=batch.length;
+  const dupPhones=[...new Set(toDelete)];
+  for(const phone of dupPhones){
+    const {data:matches}=await sb.from('leads').select('id').eq('phone',phone);
+    if(matches&&matches.length>1){
+      // Keep first, delete rest
+      const idsToRemove=matches.slice(1).map(r=>r.id);
+      for(const rid of idsToRemove){
+        const {error:delErr}=await sb.from('leads').delete().eq('id',rid);
+        if(!delErr) deleted++;
+      }
+    }
   }
 
   el.textContent=`✓ Removed ${deleted} duplicate${deleted===1?'':'s'}.`;
