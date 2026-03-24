@@ -3,229 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Sanctioned</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Dialer</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 :root{
   --bg:#080808;--surface:#111;--surface2:#181818;--border:#222;--border2:#2e2e2e;
   --accent:#c8ff00;--text:#efefef;--muted:#555;--muted2:#888;
-  --good:#00cc66;--danger:#ff4040;--warn:#ffaa00;
-  --joey:#c8ff00;--john:#00cfff;--booked:#a78bfa;
+  --good:#00cc66;--danger:#ff4040;--warn:#ffaa00;--joey:#c8ff00;--john:#00cfff;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* ── SCREENS ── */
 .screen{display:none;width:100%;min-height:100vh;flex-direction:column;align-items:center}
 .screen.active{display:flex}
 
-#toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(4rem);background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.72rem;padding:.65rem 1.2rem;border-radius:6px;z-index:999;transition:transform .25s ease;pointer-events:none;white-space:nowrap}
-#toast.show{transform:translateX(-50%) translateY(0)}
+/* ── LANDING ── */
+#landing-screen{justify-content:center;padding:0 1.5rem;gap:0;position:relative}
+#landing-screen::before{content:'';position:fixed;top:-40%;left:-20%;width:80vw;height:80vw;background:radial-gradient(circle,rgba(200,255,0,0.04) 0%,transparent 70%);pointer-events:none}
 
-.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:1rem}
-.loading-screen.hidden{display:none}
-.spinner{width:1.2rem;height:1.2rem;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted2);letter-spacing:.15em;text-transform:uppercase}
+.landing-tabs{width:100%;max-width:420px;display:flex;border-bottom:1px solid var(--border2);margin-bottom:2rem}
+.landing-tab{flex:1;font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;padding:.85rem .5rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;transition:color .15s,border-color .15s;text-align:center}
+.landing-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.landing-tab.admin-tab.active{color:var(--muted2);border-bottom-color:var(--muted2)}
+.landing-tab:hover{color:var(--muted2)}
 
-/* TOP NAV */
-.top-nav{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.7rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;flex-shrink:0}
-.top-nav-left{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);cursor:pointer}
-.top-nav-left:hover{color:var(--muted2)}
-.top-nav-right{display:flex;align-items:center;gap:.5rem}
-.nav-btn{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);cursor:pointer;padding:.28rem .5rem;border-radius:3px;transition:color .15s,background .15s}
-.nav-btn:hover{color:var(--text);background:var(--surface2)}
-.nav-divider{width:1px;height:.9rem;background:var(--border2)}
-.btn-sm{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.3rem .55rem;cursor:pointer;text-transform:uppercase}
+.tab-panel{display:none;width:100%;max-width:420px;flex-direction:column;align-items:center;gap:1.25rem}
+.tab-panel.active{display:flex}
 
-/* LANDING */
-#landing-screen{justify-content:flex-start}
-.landing-body{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;padding:2.5rem 1.5rem;gap:1.25rem;flex:1;justify-content:center}
-.landing-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.35em;text-transform:uppercase;color:var(--muted2)}
-.tm-cards{width:100%;display:flex;flex-direction:column;gap:.85rem}
-.tm-card{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:1.5rem;cursor:pointer;position:relative;overflow:hidden;transition:transform .12s,border-color .2s}
-.tm-card:active{transform:scale(.98)}
-.tm-card.joey{border-color:rgba(200,255,0,.15)}.tm-card.joey:hover{border-color:rgba(200,255,0,.35)}
-.tm-card.john{border-color:rgba(0,207,255,.15)}.tm-card.john:hover{border-color:rgba(0,207,255,.35)}
-.tm-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.tm-card.joey::after{background:var(--joey)}.tm-card.john::after{background:var(--john)}
-.tm-card-name{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:600;margin-bottom:.35rem}
-.tm-card.joey .tm-card-name{color:var(--joey)}.tm-card.john .tm-card-name{color:var(--john)}
-.tm-card-meta{font-size:.76rem;color:var(--muted2)}
-.tm-card-arrow{position:absolute;top:50%;right:1.25rem;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:1rem;color:var(--muted)}
-.sync-note{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);text-align:center}
+/* TM PANEL */
+.tm-header{width:100%;margin-bottom:.5rem}
+.tm-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.35em;color:var(--muted2);text-transform:uppercase;margin-bottom:.4rem}
+.tm-title{font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:600;color:var(--text)}
+.tm-date{font-size:.78rem;color:var(--muted2);margin-top:.2rem}
 
-/* DATE TABS — inside dialer */
-.date-tab-bar{width:100%;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0}
-.date-tab-bar::-webkit-scrollbar{display:none}
-.date-tab{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.6rem 1rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap;transition:color .15s,border-color .15s}
-.date-tab.active.joey{color:var(--joey);border-bottom-color:var(--joey)}
-.date-tab.active.john{color:var(--john);border-bottom-color:var(--john)}
-.date-tab:hover:not(.active){color:var(--muted2)}
+.user-cards{width:100%;display:flex;flex-direction:column;gap:.9rem}
+.user-card{width:100%;border:1px solid var(--border2);border-radius:10px;padding:1.5rem;cursor:pointer;background:var(--surface);position:relative;overflow:hidden;transition:transform .15s,border-color .2s;text-align:left}
+.user-card:active{transform:scale(.98)}
+.user-card.joey{border-color:rgba(200,255,0,.2)}.user-card.joey:hover{border-color:var(--joey)}
+.user-card.john{border-color:rgba(0,207,255,.2)}.user-card.john:hover{border-color:var(--john)}
+.user-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.user-card.joey::before{background:var(--joey)}.user-card.john::before{background:var(--john)}
+.user-card-name{font-family:'IBM Plex Mono',monospace;font-size:1.2rem;font-weight:600;margin-bottom:.3rem}
+.user-card.joey .user-card-name{color:var(--joey)}.user-card.john .user-card-name{color:var(--john)}
+.user-card-meta{font-size:.76rem;color:var(--muted2)}
+.user-card-count{position:absolute;top:1.1rem;right:1.1rem;font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--muted);letter-spacing:.08em}
 
-/* DIALER */
+.no-csv-card{width:100%;background:var(--surface);border:1px dashed var(--border2);border-radius:10px;padding:1.5rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.6rem}
+.no-csv-icon{font-size:1.5rem;opacity:.4}
+.no-csv-text{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted2);line-height:1.7}
+.no-csv-text strong{color:var(--muted2);display:block;margin-bottom:.2rem;font-size:.8rem}
+
+/* ADMIN PANEL */
+.admin-login-wrap{width:100%;display:flex;flex-direction:column;gap:1rem}
+.admin-label{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:.25rem}
+.admin-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.9rem;padding:.85rem 1rem;outline:none;transition:border-color .2s}
+.admin-input:focus{border-color:var(--muted2)}
+.btn-login{width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:.9rem;cursor:pointer;transition:border-color .2s,color .2s}
+.btn-login:hover{border-color:var(--muted2);color:var(--text)}
+.btn-login:active{opacity:.8}
+.login-error{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--danger);display:none;text-align:center}
+
+/* ADMIN DASHBOARD */
+.admin-dash{width:100%;display:flex;flex-direction:column;gap:1.25rem}
+.admin-header-row{display:flex;align-items:center;justify-content:space-between}
+.admin-title{font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2)}
+.btn-logout{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+.upload-zone{width:100%;position:relative;border:1px dashed var(--border2);border-radius:8px;padding:2.25rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--surface)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(200,255,0,.02)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone-inner{display:flex;flex-direction:column;align-items:center;gap:.5rem;pointer-events:none}
+.upload-icon{font-size:1.75rem;opacity:.45}
+.upload-text-main{font-size:.9rem;color:var(--text);font-weight:500}
+.upload-text-sub{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted2)}
+
+.upload-format{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.9rem 1rem}
+.upload-format-title{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.upload-format-cols{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted2);line-height:1.8}
+.upload-format-cols span{color:var(--accent)}
+
+.upload-success{display:none;background:rgba(0,204,102,.07);border:1px solid var(--good);border-radius:6px;padding:.75rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--good);text-align:center}
+.error-bar{display:none;background:rgba(255,64,64,.1);border:1px solid var(--danger);border-radius:6px;padding:.75rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--danger);text-align:center}
+
+.today-summary{background:var(--surface);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+.today-summary-title{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:.75rem 1rem;border-bottom:1px solid var(--border)}
+.today-summary-row{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1rem;border-bottom:1px solid var(--border)}
+.today-summary-row:last-child{border-bottom:none}
+.today-summary-name{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--text)}
+.today-summary-stats{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--muted2)}
+
+/* ── DIALER ── */
 #dialer-screen{justify-content:flex-start}
-.dialer-nav-who{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase}
-.dialer-nav-who.joey{color:var(--joey)}.dialer-nav-who.john{color:var(--john)}
-.progress-wrap{flex:1;margin:0 1rem;display:flex;flex-direction:column;gap:.28rem;align-items:center}
+.dialer-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.dialer-who{font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase}
+.dialer-who.joey{color:var(--joey)}.dialer-who.john{color:var(--john)}
+.progress-wrap{flex:1;margin:0 1rem;display:flex;flex-direction:column;gap:.3rem;align-items:center}
 .progress-bar-bg{width:100%;height:2px;background:var(--border2);border-radius:2px;overflow:hidden}
 .progress-bar-fill{height:100%;border-radius:2px;transition:width .4s ease}
 .progress-bar-fill.joey{background:var(--joey)}.progress-bar-fill.john{background:var(--john)}
-.progress-nums{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted2)}
-.dialer-body{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;padding:1.5rem 1.5rem 2rem;gap:1rem}
+.progress-nums{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--muted2)}
+.btn-sm{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.1em;padding:.32rem .6rem;cursor:pointer;text-transform:uppercase;white-space:nowrap}
+.dialer-body{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;padding:1.75rem 1.5rem 2rem;gap:1rem}
 .contact-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden}
 .contact-card-top{height:2px;width:100%}
 .contact-card-top.joey{background:var(--joey)}.contact-card-top.john{background:var(--john)}
-.contact-card-inner{padding:1.4rem;display:flex;flex-direction:column;gap:.85rem}
-.contact-name{font-size:1.3rem;font-weight:600;color:var(--text);line-height:1.2}
+.contact-card-inner{padding:1.5rem;display:flex;flex-direction:column;gap:.9rem}
+.contact-name{font-size:1.35rem;font-weight:600;color:var(--text);line-height:1.2}
 .contact-tags{display:flex;flex-wrap:wrap;gap:.4rem}
-.tag{font-family:'IBM Plex Mono',monospace;font-size:.63rem;letter-spacing:.07em;text-transform:uppercase;padding:.22rem .5rem;border-radius:3px;border:1px solid}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;padding:.25rem .55rem;border-radius:3px;border:1px solid}
 .tag.job{color:var(--accent);border-color:rgba(200,255,0,.3);background:rgba(200,255,0,.05)}
 .tag.job.john-user{color:var(--john);border-color:rgba(0,207,255,.3);background:rgba(0,207,255,.05)}
 .tag.city{color:var(--muted2);border-color:var(--border2)}
 .contact-divider{height:1px;background:var(--border)}
-.contact-number{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:600;color:var(--text);letter-spacing:.04em}
-.call-btn{width:100%;max-width:380px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:1.15rem;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:.6rem;transition:opacity .15s,transform .1s}
+.contact-number{font-family:'IBM Plex Mono',monospace;font-size:1.45rem;font-weight:600;color:var(--text);letter-spacing:.04em}
+.call-btn{width:100%;max-width:380px;background:var(--accent);color:#000;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:1.2rem;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:.6rem;transition:opacity .15s,transform .1s}
 .call-btn.john-user{background:var(--john)}.call-btn:active{transform:scale(.97);opacity:.85}
 .outcome-section{display:none;width:100%;max-width:380px;flex-direction:column;gap:.5rem}
 .outcome-section.visible{display:flex}
-.outcome-label{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;text-align:center}
-.outcome-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem}
-.outcome-btn{background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:.57rem;letter-spacing:.06em;text-transform:uppercase;padding:.7rem .3rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.28rem;transition:all .12s}
-.outcome-btn .icon{font-size:.9rem}.outcome-btn:active{transform:scale(.95)}
+.outcome-label{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;text-align:center}
+.outcome-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.outcome-btn{background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;padding:.75rem .3rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.3rem;transition:all .12s}
+.outcome-btn .icon{font-size:.95rem}.outcome-btn:active{transform:scale(.95)}
 .outcome-btn.sel-answered{border-color:var(--good);color:var(--good);background:rgba(0,204,102,.07)}
 .outcome-btn.sel-no-answer{border-color:var(--danger);color:var(--danger);background:rgba(255,64,64,.07)}
 .outcome-btn.sel-callback{border-color:var(--warn);color:var(--warn);background:rgba(255,170,0,.07)}
-.outcome-btn.sel-booked{border-color:var(--booked);color:var(--booked);background:rgba(167,139,250,.07)}
-.outcome-btn.sel-dnc{border-color:var(--muted);color:var(--muted);background:rgba(85,85,85,.1)}
-.next-btn{display:none;width:100%;max-width:380px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:.95rem;cursor:pointer;align-items:center;justify-content:center;gap:.5rem}
+.next-btn{display:none;width:100%;max-width:380px;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:1rem;cursor:pointer;align-items:center;justify-content:center;gap:.5rem}
 .next-btn.visible{display:flex}.next-btn:active{opacity:.7}
 
-/* LOG */
+/* ── LOG ── */
 #log-screen{justify-content:flex-start}
-.log-stats{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
-.stat-cell{background:var(--surface);padding:.85rem 1rem;text-align:center}
-.stat-num{font-family:'IBM Plex Mono',monospace;font-size:1.35rem;font-weight:600}
-.stat-label{font-family:'IBM Plex Mono',monospace;font-size:.57rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.12rem}
+.log-header{width:100%;background:var(--surface);border-bottom:1px solid var(--border);padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.log-title{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase}
+.log-title.joey{color:var(--joey)}.log-title.john{color:var(--john)}
+.date-tabs-wrap{width:100%;background:var(--surface2);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.date-tabs{display:flex;min-width:max-content}
+.date-tab{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:.65rem 1rem;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;background:none;border-top:none;border-left:none;border-right:none}
+.date-tab.active.joey{color:var(--joey);border-bottom-color:var(--joey)}
+.date-tab.active.john{color:var(--john);border-bottom-color:var(--john)}
+.log-stats{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+.stat-cell{background:var(--surface);padding:.9rem 1rem;text-align:center}
+.stat-num{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:600}
+.stat-label{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:.15rem}
 .s-answered .stat-num{color:var(--good)}.s-callback .stat-num{color:var(--warn)}.s-no-answer .stat-num{color:var(--danger)}
-.remaining-banner{width:100%;background:var(--surface2);border-bottom:1px solid var(--border);padding:.55rem 1.25rem;font-family:'IBM Plex Mono',monospace;font-size:.67rem;color:var(--muted2)}
+.remaining-banner{width:100%;background:var(--surface2);border-bottom:1px solid var(--border);padding:.6rem 1.25rem;font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--muted2)}
 .remaining-banner span{color:var(--text);font-weight:600}
 .log-list{width:100%;flex:1;overflow-y:auto}
-.log-item{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);gap:1rem}
+.log-section-title{font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:.75rem 1.25rem .4rem;border-bottom:1px solid var(--border);background:var(--bg)}
+.log-item{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.25rem;border-bottom:1px solid var(--border);gap:1rem}
 .log-info{flex:1;min-width:0}
-.log-name{font-size:.86rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.log-sub{font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted2);margin-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.log-right{display:flex;flex-direction:column;align-items:flex-end;gap:.22rem;flex-shrink:0}
-.log-badge{font-family:'IBM Plex Mono',monospace;font-size:.57rem;letter-spacing:.07em;text-transform:uppercase;padding:.16rem .42rem;border-radius:3px;border:1px solid}
+.log-name{font-size:.88rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-sub{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--muted2);margin-top:.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-right{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex-shrink:0}
+.log-badge{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.07em;text-transform:uppercase;padding:.18rem .45rem;border-radius:3px;border:1px solid}
 .log-badge.answered{color:var(--good);border-color:var(--good)}.log-badge.no-answer{color:var(--danger);border-color:var(--danger)}
-.log-badge.callback{color:var(--warn);border-color:var(--warn)}.log-badge.booked{color:var(--booked);border-color:var(--booked)}
-.log-badge.dnc{color:var(--muted);border-color:var(--muted)}
-.log-time{font-family:'IBM Plex Mono',monospace;font-size:.57rem;color:var(--muted)}
-.log-footer{width:100%;padding:1rem 1.25rem;border-top:1px solid var(--border);flex-shrink:0}
-.btn-export{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:.75rem;cursor:pointer}
+.log-badge.callback{color:var(--warn);border-color:var(--warn)}.log-badge.pending{color:var(--muted);border-color:var(--border2)}
+.log-badge.upcoming{color:var(--muted);border-color:var(--border);font-style:italic}
+.log-time{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted)}
+.log-footer{width:100%;padding:1rem 1.25rem;border-top:1px solid var(--border)}
+.btn-export{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;padding:.8rem;cursor:pointer}
 
-/* BOOKED */
-#booked-screen{justify-content:flex-start}
-.booked-list{width:100%;flex:1;overflow-y:auto}
-.booked-item{padding:.95rem 1.25rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:.3rem}
-.booked-name{font-size:.92rem;font-weight:600;color:var(--text)}
-.booked-phone{font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--muted2)}
-.booked-meta{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin-top:.1rem}
-.booked-tag{font-family:'IBM Plex Mono',monospace;font-size:.6rem;padding:.15rem .42rem;border-radius:3px;border:1px solid}
-.booked-tag.job{color:var(--booked);border-color:rgba(167,139,250,.35)}
-.booked-tag.info{color:var(--muted2);border-color:var(--border2)}
-.empty-state{padding:3rem 1.5rem;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--muted);line-height:2.2}
-
-/* ADMIN */
-#admin-screen{justify-content:flex-start}
-.admin-body{width:100%;padding:1.5rem;display:flex;flex-direction:column;gap:1.2rem;max-width:480px;align-self:center}
-.admin-label{font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:.22rem}
-.admin-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.9rem;padding:.8rem 1rem;outline:none;transition:border-color .2s}
-.admin-input:focus{border-color:var(--muted2)}
-.btn-login{width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:.85rem;cursor:pointer;transition:border-color .2s}
-.btn-login:hover{border-color:var(--muted2)}
-.login-error{font-family:'IBM Plex Mono',monospace;font-size:.68rem;color:var(--danger);display:none;text-align:center}
-.upload-zone{width:100%;position:relative;border:1px dashed var(--border2);border-radius:8px;padding:2rem 1.5rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--surface)}
-.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(200,255,0,.02)}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-zone-inner{display:flex;flex-direction:column;align-items:center;gap:.45rem;pointer-events:none}
-.upload-icon{font-size:1.6rem;opacity:.4}
-.upload-text-main{font-size:.88rem;color:var(--text);font-weight:500}
-.upload-text-sub{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--muted2)}
-.upload-success{display:none;background:rgba(0,204,102,.07);border:1px solid var(--good);border-radius:6px;padding:.7rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--good);text-align:center}
-.error-bar{display:none;background:rgba(255,64,64,.1);border:1px solid var(--danger);border-radius:6px;padding:.7rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--danger);text-align:center}
-.summary-box{background:var(--surface);border:1px solid var(--border2);border-radius:8px;overflow:hidden}
-.summary-title{font-family:'IBM Plex Mono',monospace;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:.7rem 1rem;border-bottom:1px solid var(--border)}
-.summary-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;border-bottom:1px solid var(--border)}
-.summary-row:last-child{border-bottom:none}
-.summary-name{font-family:'IBM Plex Mono',monospace;font-size:.73rem}
-.summary-stats{font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:var(--muted2)}
-.btn-logout{background:none;border:none;font-family:'IBM Plex Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
-
-/* DONE */
-#done-screen{justify-content:flex-start}
-.done-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;padding:2rem;text-align:center}
-.done-icon{font-size:2.25rem}
-.done-title{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+/* ── DONE ── */
+#done-screen{justify-content:center;align-items:center;padding:2rem;gap:1.5rem;text-align:center}
+.done-icon{font-size:2.5rem}.done-title{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
 .done-title.joey{color:var(--joey)}.done-title.john{color:var(--john)}
-.done-sub{color:var(--muted2);font-size:.8rem;line-height:1.8;font-family:'IBM Plex Mono',monospace;white-space:pre-line}
-.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.35rem;cursor:pointer}
+.done-sub{color:var(--muted2);font-size:.82rem;line-height:1.7;font-family:'IBM Plex Mono',monospace;white-space:pre-line}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;padding:.7rem 1.4rem;cursor:pointer}
+.btn-primary{background:var(--accent);color:#000;border:none;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;padding:.9rem 1.5rem;cursor:pointer;width:100%;max-width:280px}
+.btn-primary.john-user{background:var(--john)}
 </style>
 </head>
 <body>
 
-<div class="loading-screen" id="loading-screen">
-  <div class="spinner"></div>
-  <div class="loading-text">Connecting...</div>
-</div>
-<div id="toast"></div>
-
 <!-- LANDING -->
 <div id="landing-screen" class="screen active">
-  <div class="top-nav">
-    <div class="top-nav-left" onclick="goHome()">Sanctioned</div>
-    <div class="top-nav-right">
-      <button class="nav-btn" onclick="showLog()">Log</button>
-      <div class="nav-divider"></div>
-      <button class="nav-btn" onclick="showBooked()">Booked</button>
-      <div class="nav-divider"></div>
-      <button class="nav-btn" onclick="showAdmin()">Admin</button>
+  <div class="landing-tabs" style="margin-top:2rem">
+    <button class="landing-tab active" onclick="switchLandingTab('tm')">Team</button>
+    <button class="landing-tab admin-tab" onclick="switchLandingTab('admin')">Admin</button>
+  </div>
+
+  <!-- TM PANEL -->
+  <div class="tab-panel active" id="tm-panel">
+    <div class="tm-header" style="width:100%">
+      <div class="tm-eyebrow">Today's Leads</div>
+      <div class="tm-title">Who's calling?</div>
+      <div class="tm-date" id="landing-date"></div>
+    </div>
+    <div class="user-cards" id="user-cards-wrap">
+      <!-- populated by JS -->
     </div>
   </div>
-  <div class="landing-body">
-    <div class="landing-eyebrow">Who's calling?</div>
-    <div class="tm-cards">
-      <div class="tm-card joey" onclick="openTM('joey')">
-        <div class="tm-card-name">Joey</div>
-        <div class="tm-card-meta" id="joey-meta">Loading...</div>
-        <div class="tm-card-arrow">→</div>
+
+  <!-- ADMIN PANEL -->
+  <div class="tab-panel" id="admin-panel">
+
+    <!-- LOGIN FORM -->
+    <div id="admin-login" style="width:100%;display:flex;flex-direction:column;gap:1rem">
+      <div style="text-align:center;margin-bottom:.5rem">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.35em;color:var(--muted2);text-transform:uppercase;margin-bottom:.4rem">Admin Access</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:600;color:var(--text)">Sign In</div>
       </div>
-      <div class="tm-card john" onclick="openTM('john')">
-        <div class="tm-card-name">John</div>
-        <div class="tm-card-meta" id="john-meta">Loading...</div>
-        <div class="tm-card-arrow">→</div>
+      <div>
+        <div class="admin-label">Username</div>
+        <input class="admin-input" id="admin-user" type="text" autocomplete="off" autocapitalize="none" placeholder="username">
+      </div>
+      <div>
+        <div class="admin-label">Password</div>
+        <input class="admin-input" id="admin-pass" type="password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="login-error" id="login-error">Incorrect username or password.</div>
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    </div>
+
+    <!-- ADMIN DASHBOARD (hidden until logged in) -->
+    <div id="admin-dash" style="display:none;width:100%;flex-direction:column;gap:1.25rem">
+      <div class="admin-header-row">
+        <div class="admin-title">Admin</div>
+        <button class="btn-logout" onclick="doLogout()">Sign out</button>
+      </div>
+
+      <div class="upload-zone" id="drop-zone">
+        <input type="file" accept=".csv" id="csv-input">
+        <div class="upload-zone-inner">
+          <div class="upload-icon">📋</div>
+          <div class="upload-text-main">Upload Today's CSV</div>
+          <div class="upload-text-sub">Tap to select · or drag and drop</div>
+        </div>
+      </div>
+
+      <div class="upload-success" id="upload-success"></div>
+      <div class="error-bar" id="error-bar"></div>
+
+      <div class="upload-format">
+        <div class="upload-format-title">Expected Column Order</div>
+        <div class="upload-format-cols">
+          col 1: <span>Name</span> &nbsp;·&nbsp;
+          col 3: <span>Job Type</span> &nbsp;·&nbsp;
+          col 4: <span>Phone</span> &nbsp;·&nbsp;
+          col 8: <span>City</span>
+        </div>
+      </div>
+
+      <div class="today-summary" id="today-summary" style="display:none">
+        <div class="today-summary-title">Today's Split</div>
+        <div class="today-summary-row">
+          <div class="today-summary-name" style="color:var(--joey)">Joey</div>
+          <div class="today-summary-stats" id="summary-joey">—</div>
+        </div>
+        <div class="today-summary-row">
+          <div class="today-summary-name" style="color:var(--john)">John</div>
+          <div class="today-summary-stats" id="summary-john">—</div>
+        </div>
       </div>
     </div>
-    <div class="sync-note" id="sync-note"></div>
+
   </div>
 </div>
 
 <!-- DIALER -->
 <div id="dialer-screen" class="screen">
-  <div class="top-nav">
-    <div class="dialer-nav-who" id="dialer-who">Joey</div>
+  <div class="dialer-header">
+    <div class="dialer-who" id="dialer-who">Joey</div>
     <div class="progress-wrap">
       <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
-      <div class="progress-nums" id="progress-nums">— / —</div>
+      <div class="progress-nums" id="progress-nums">0 / 0</div>
     </div>
-    <div class="top-nav-right">
-      <button class="nav-btn" onclick="showLog()">Log</button>
-      <div class="nav-divider"></div>
-      <button class="btn-sm" onclick="goHome()">← Home</button>
-    </div>
+    <button class="btn-sm" onclick="showLog()">Log</button>
   </div>
-  <!-- date tabs rendered here -->
-  <div class="date-tab-bar" id="dialer-date-tabs"></div>
   <div class="dialer-body">
     <div class="contact-card">
       <div class="contact-card-top" id="card-top"></div>
@@ -242,12 +286,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <a class="call-btn" id="call-btn" href="#" onclick="onCall()"><span>📞</span><span>Call</span></a>
     <div class="outcome-section" id="outcome-section">
       <div class="outcome-label">Log outcome</div>
-      <div class="outcome-grid">
+      <div class="outcome-row">
         <button class="outcome-btn" id="btn-answered" onclick="selectOutcome('answered')"><span class="icon">✅</span>Answered</button>
         <button class="outcome-btn" id="btn-no-answer" onclick="selectOutcome('no-answer')"><span class="icon">❌</span>No Answer</button>
         <button class="outcome-btn" id="btn-callback" onclick="selectOutcome('callback')"><span class="icon">🔁</span>Callback</button>
-        <button class="outcome-btn" id="btn-booked" onclick="selectOutcome('booked')"><span class="icon">📅</span>Booked</button>
-        <button class="outcome-btn" id="btn-dnc" onclick="selectOutcome('dnc')"><span class="icon">🚫</span>DNC</button>
       </div>
     </div>
     <button class="next-btn" id="next-btn" onclick="advance()">Next →</button>
@@ -256,754 +298,379 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 <!-- LOG -->
 <div id="log-screen" class="screen">
-  <div class="top-nav">
-    <div class="top-nav-left" style="color:var(--muted2);cursor:default" id="log-title">Call Log</div>
-    <div class="top-nav-right">
-      <button class="nav-btn" onclick="showBooked()">Booked</button>
-      <div class="nav-divider"></div>
-      <button class="btn-sm" onclick="goHome()">← Home</button>
-    </div>
+  <div class="log-header">
+    <div class="log-title" id="log-title">Log</div>
+    <button class="btn-sm" onclick="backToDialer()">← Back</button>
   </div>
-  <div class="date-tab-bar" id="log-date-tabs"></div>
+  <div class="date-tabs-wrap"><div class="date-tabs" id="date-tabs"></div></div>
   <div class="log-stats">
     <div class="stat-cell s-answered"><div class="stat-num" id="stat-answered">0</div><div class="stat-label">Answered</div></div>
     <div class="stat-cell s-callback"><div class="stat-num" id="stat-callback">0</div><div class="stat-label">Callback</div></div>
     <div class="stat-cell s-no-answer"><div class="stat-num" id="stat-no-answer">0</div><div class="stat-label">No Answer</div></div>
-    <div class="stat-cell s-booked"><div class="stat-num" id="stat-booked" style="color:var(--booked)">0</div><div class="stat-label">Booked</div></div>
-    <div class="stat-cell s-dnc"><div class="stat-num" id="stat-dnc" style="color:var(--muted)">0</div><div class="stat-label">DNC</div></div>
   </div>
   <div class="remaining-banner"><span id="remaining-count">0</span> contacts remaining</div>
   <div class="log-list" id="log-list"></div>
   <div class="log-footer"><button class="btn-export" onclick="exportLog()">Export CSV</button></div>
 </div>
 
-<!-- BOOKED -->
-<div id="booked-screen" class="screen">
-  <div class="top-nav">
-    <div class="top-nav-left" style="color:var(--booked);cursor:default">Booked Leads</div>
-    <div class="top-nav-right">
-      <button class="nav-btn" onclick="showLog()">Log</button>
-      <div class="nav-divider"></div>
-      <button class="btn-sm" onclick="goHome()">← Home</button>
-    </div>
-  </div>
-  <div class="booked-list" id="booked-list"></div>
-</div>
-
-<!-- ADMIN -->
-<div id="admin-screen" class="screen">
-  <div class="top-nav">
-    <div class="top-nav-left" style="cursor:default">Admin</div>
-    <div class="top-nav-right"><button class="btn-sm" onclick="goHome()">← Home</button></div>
-  </div>
-  <div class="admin-body">
-    <div id="admin-login-wrap" style="display:flex;flex-direction:column;gap:1rem">
-      <div style="text-align:center;margin-bottom:.25rem">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:.62rem;letter-spacing:.35em;color:var(--muted2);text-transform:uppercase;margin-bottom:.35rem">Admin Access</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:600">Sign In</div>
-      </div>
-      <div><div class="admin-label">Username</div><input class="admin-input" id="admin-user" type="text" autocomplete="off" autocapitalize="none" placeholder="username"></div>
-      <div><div class="admin-label">Password</div><input class="admin-input" id="admin-pass" type="password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="login-error" id="login-error">Incorrect username or password.</div>
-      <button class="btn-login" onclick="doLogin()">Sign In →</button>
-    </div>
-    <div id="admin-dash" style="display:none;flex-direction:column;gap:1.2rem">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2)">Upload Leads</div>
-        <button class="btn-logout" onclick="doLogout()">Sign out</button>
-      </div>
-      <div class="upload-zone" id="drop-zone">
-        <input type="file" accept=".csv" id="csv-input">
-        <div class="upload-zone-inner">
-          <div class="upload-icon">📋</div>
-          <div class="upload-text-main">Upload CSV</div>
-          <div class="upload-text-sub">Any column format · auto-detected</div>
-        </div>
-      </div>
-      <div class="upload-success" id="upload-success"></div>
-      <div class="error-bar" id="error-bar"></div>
-      <button class="btn-login" onclick="deleteDuplicates()" style="background:rgba(255,64,64,.08);border-color:rgba(255,64,64,.3);color:#ff8080;">Delete Duplicate Phone Numbers</button>
-      <div id="dedup-result" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:.7rem;text-align:center;padding:.5rem"></div>
-      <div class="summary-box" id="today-summary" style="display:none">
-        <div class="summary-title">Today's Upload</div>
-        <div class="summary-row"><div class="summary-name" style="color:var(--joey)">Joey</div><div class="summary-stats" id="summary-joey">—</div></div>
-        <div class="summary-row"><div class="summary-name" style="color:var(--john)">John</div><div class="summary-stats" id="summary-john">—</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- DONE -->
 <div id="done-screen" class="screen">
-  <div class="top-nav">
-    <div class="top-nav-left" onclick="goHome()">Sanctioned</div>
-    <div class="top-nav-right">
-      <button class="nav-btn" onclick="showLog()">Log</button>
-      <div class="nav-divider"></div>
-      <button class="nav-btn" onclick="showBooked()">Booked</button>
-    </div>
-  </div>
-  <div class="done-body">
-    <div class="done-icon">🏁</div>
-    <div class="done-title" id="done-title">Done</div>
-    <div class="done-sub" id="done-sub"></div>
-    <button class="btn-ghost" onclick="goHome()">← Home</button>
-  </div>
+  <div class="done-icon">🏁</div>
+  <div class="done-title" id="done-title">Done</div>
+  <div class="done-sub" id="done-sub"></div>
+  <button class="btn-primary" id="done-export" onclick="exportLog()">Export Log</button>
+  <button class="btn-ghost" onclick="goHome()">← Home</button>
 </div>
 
 <script>
-const SUPABASE_URL='https://spjreskefeznahqcivhf.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwanJlc2tlZmV6bmFocWNpdmhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNDE1NTQsImV4cCI6MjA4ODgxNzU1NH0.LA_M6ZcOelvdN5t_YMJyN3YrmpGdQ5rJGxOr9DDFOBs';
-const ADMIN_USER='admin', ADMIN_PASS='1234';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const STORE_KEY = 'dialer_data_v2';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = '1234';
 
-// ── STATE ──
-let currentUser=null;   // 'joey' or 'john'
-let allLeadsForDate=[];  // every row for current user+date, fetched once
-let currentLeads=[];     // filtered to callable only
-let currentIndex=0;
-let selectedOutcome=null;
-let dialerDate=null;
-let logDate=null;
-let adminLoggedIn=false;
-
-// ── HELPERS ──
-
-// A lead is callable if status is null, empty, or literally 'pending'
-// We never filter this server-side — always here
-function isPending(r){ return !r.status || r.status==='pending'; }
-function isCalled(r){ return r.outcome && r.outcome!==''; }
-
-function fmtDate(k){
-  // k is a string like '2026-03-11' from Supabase
-  // Parse it safely with noon UTC to avoid timezone shifting the day
-  const d=new Date(k+'T12:00:00Z');
-  const today=new Date();
-  const todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  if(k===todayStr) return 'Today';
-  return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'UTC'});
-}
-
-function fmtPhone(n){
-  n=String(n||'').replace(/\D/g,'');
-  if(n.length===10) return '('+n.slice(0,3)+') '+n.slice(3,6)+'-'+n.slice(6);
-  if(n.length===11&&n[0]==='1') return '+1 ('+n.slice(1,4)+') '+n.slice(4,7)+'-'+n.slice(7);
-  return n;
-}
-
-function showToast(msg,ms=2500){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),ms);
-}
-
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+let appData = { days: {} };
+let currentUser = null;
+let currentDateKey = null;
+let selectedOutcome = null;
+let logViewDate = null;
+let adminLoggedIn = false;
 
 // ── INIT ──
-async function init(){
-  await loadHomeData();
-  document.getElementById('loading-screen').classList.add('hidden');
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function friendlyDate(k) {
+  const d = new Date(k + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+function loadData() { try { const r = localStorage.getItem(STORE_KEY); if (r) appData = JSON.parse(r); } catch(e){} }
+function saveData() { try { localStorage.setItem(STORE_KEY, JSON.stringify(appData)); } catch(e){} }
+
+function init() {
+  loadData();
+  document.getElementById('landing-date').textContent = friendlyDate(todayKey());
+  renderTMCards();
 }
 
-async function goHome(){
-  showScreen('landing-screen');
-  await loadHomeData();
-}
-
-// ── HOME ──
-async function loadHomeData(){
-  // Pull every lead — no status filter, no date filter
-  // We'll sort everything out client-side
-  const {data:rows, error}=await sb.from('leads')
-    .select('date_added,assigned_to,status,outcome')
-    .order('date_added',{ascending:false});
-
-  if(error||!rows){ 
-    document.getElementById('joey-meta').textContent='Connection error';
-    document.getElementById('john-meta').textContent='Connection error';
-    return; 
-  }
-
-  const joeyRows=rows.filter(r=>r.assigned_to==='joey');
-  const johnRows=rows.filter(r=>r.assigned_to==='john');
-
-  renderTMCard('joey', joeyRows);
-  renderTMCard('john', johnRows);
-
-  document.getElementById('sync-note').textContent=
-    'Synced '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-}
-
-function getMostRecentPendingDate(rows){
-  // dates that still have at least one callable lead
-  const pending=rows.filter(isPending).map(r=>r.date_added);
-  const uniq=[...new Set(pending)].sort().reverse();
-  if(uniq.length) return uniq[0];
-  // fallback: most recent date period
-  const all=[...new Set(rows.map(r=>r.date_added))].sort().reverse();
-  return all[0]||null;
-}
-
-function renderTMCard(user, rows){
-  const date=getMostRecentPendingDate(rows);
-  const meta=document.getElementById(user+'-meta');
-  if(!date){ meta.textContent='No leads uploaded'; return; }
-  const forDate=rows.filter(r=>r.date_added===date);
-  const remaining=forDate.filter(isPending).length;
-  const called=forDate.filter(isCalled).length;
-  meta.textContent=remaining+' remaining · '+called+' called · '+fmtDate(date);
-}
-
-// ── DIALER — OPEN TM ──
-async function openTM(user){
-  currentUser=user;
-
-  // Fetch all leads for this TM, no filters except assigned_to
-  const {data:rows, error}=await sb.from('leads')
-    .select('date_added,status')
-    .eq('assigned_to',user);
-
-  if(error||!rows||!rows.length){
-    showToast('No leads uploaded yet');
-    return;
-  }
-
-  // Build date list from actual DB data
-  const allDates=[...new Set(rows.map(r=>r.date_added))].sort().reverse();
-
-  // Pick the most recent date with callable leads
-  const pendingDates=[...new Set(rows.filter(isPending).map(r=>r.date_added))].sort().reverse();
-  dialerDate=pendingDates.length ? pendingDates[0] : allDates[0];
-
-  setupDialerChrome(user);
-  renderDateTabs(user, allDates);
-  showScreen('dialer-screen');
-  await loadLeadsForDate(user, dialerDate);
-}
-
-function setupDialerChrome(user){
-  const isJoey=user==='joey';
-  document.getElementById('dialer-who').textContent=isJoey?'Joey':'John';
-  document.getElementById('dialer-who').className='dialer-nav-who '+(isJoey?'joey':'john');
-  document.getElementById('progress-fill').className='progress-bar-fill '+user;
-  document.getElementById('card-top').className='contact-card-top '+user;
-  document.getElementById('c-job').className='tag job'+(isJoey?'':' john-user');
-  document.getElementById('call-btn').className='call-btn'+(isJoey?'':' john-user');
-}
-
-function renderDateTabs(user, dates){
-  const bar=document.getElementById('dialer-date-tabs');
-  bar.innerHTML=dates.map(d=>{
-    const active=d===dialerDate;
-    return `<button class="date-tab${active?' active '+user:''}" onclick="switchDialerDate('${d}')">${fmtDate(d)}</button>`;
-  }).join('');
-}
-
-async function switchDialerDate(d){
-  dialerDate=d;
-  // Re-highlight tabs
-  const tabs=document.querySelectorAll('.date-tab');
-  tabs.forEach(t=>{
-    // match by stored onclick attribute
-    const onclick=t.getAttribute('onclick');
-    const isActive=onclick && onclick.includes("'"+d+"'");
-    t.className='date-tab'+(isActive?' active '+currentUser:'');
+// ── LANDING TABS ──
+function switchLandingTab(tab) {
+  document.querySelectorAll('.landing-tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && tab==='tm') || (i===1 && tab==='admin'));
   });
-  resetOutcomeUI();
-  await loadLeadsForDate(currentUser, d);
+  document.getElementById('tm-panel').classList.toggle('active', tab==='tm');
+  document.getElementById('admin-panel').classList.toggle('active', tab==='admin');
+  if (tab === 'admin' && adminLoggedIn) showAdminDash();
 }
 
-// ── LOAD LEADS — THE CORE FIX ──
-// No status filter server-side. Fetch everything for user+date, filter client-side.
-async function loadLeadsForDate(user, date){
-  const {data, error}=await sb.from('leads')
-    .select('*')
-    .eq('assigned_to', user)
-    .eq('date_added', date);
+// ── TM CARDS ──
+function renderTMCards() {
+  const today = todayKey();
+  const d = appData.days[today];
+  const wrap = document.getElementById('user-cards-wrap');
 
-  if(error){
-    showToast('Error loading leads');
-    currentLeads=[];
-    currentIndex=0;
-    renderContact();
+  if (!d) {
+    wrap.innerHTML = `
+      <div class="user-card joey" style="cursor:default;opacity:.5">
+        <div class="user-card-count">—</div>
+        <div class="user-card-name">Joey</div>
+        <div class="user-card-meta">Waiting for today's leads</div>
+      </div>
+      <div class="user-card john" style="cursor:default;opacity:.5">
+        <div class="user-card-count">—</div>
+        <div class="user-card-name">John</div>
+        <div class="user-card-meta">Waiting for today's leads</div>
+      </div>`;
     return;
   }
 
-  allLeadsForDate=data||[];
-  // Only show leads that are callable — null status or 'pending'
-  currentLeads=allLeadsForDate.filter(isPending);
-  currentIndex=0;
-  renderContact();
-}
-
-// ── RENDER CONTACT ──
-function resetOutcomeUI(){
-  selectedOutcome=null;
-  document.getElementById('outcome-section').classList.remove('visible');
-  document.getElementById('next-btn').classList.remove('visible');
-  ['answered','no-answer','callback','booked','dnc'].forEach(o=>
-    document.getElementById('btn-'+o).className='outcome-btn'
-  );
-}
-
-function renderContact(){
-  resetOutcomeUI();
-
-  const total=currentLeads.length;
-
-  if(total===0){
-    // All leads for this date are done or there are none
-    const totalForDate=allLeadsForDate.length;
-    if(totalForDate===0){
-      // Truly no leads on this date
-      document.getElementById('c-name').textContent='No leads';
-    } else {
-      // Leads exist but all called
-      showDone(); return;
+  ['joey','john'].forEach(u => {
+    const ud = d[u];
+    const total = ud.contacts.length;
+    const done = ud.log.length;
+    const left = total - ud.index;
+    const meta = done > 0 ? done + ' called · ' + left + ' remaining' : left + ' remaining';
+    const el = wrap.querySelector('.user-card.' + u);
+    if (el) {
+      el.querySelector('.user-card-count').textContent = total + ' contacts';
+      el.querySelector('.user-card-meta').textContent = meta;
+      el.style.opacity = '';
+      el.style.cursor = '';
+      el.onclick = () => startSession(u);
     }
-    document.getElementById('c-job').textContent='—';
-    document.getElementById('c-city').textContent='—';
-    document.getElementById('c-number').textContent='—';
-    document.getElementById('call-btn').href='#';
-    document.getElementById('progress-nums').textContent='0 remaining';
-    document.getElementById('progress-fill').style.width='100%';
-    return;
-  }
-
-  if(currentIndex>=total){ showDone(); return; }
-
-  const c=currentLeads[currentIndex];
-  document.getElementById('c-name').textContent=c.name||'—';
-  document.getElementById('c-job').textContent=c.job||'—';
-  document.getElementById('c-city').textContent=c.city||'—';
-  document.getElementById('c-number').textContent=fmtPhone(c.phone);
-  document.getElementById('call-btn').href='tel:'+String(c.phone||'').replace(/\D/g,'');
-
-  const done=currentIndex;
-  document.getElementById('progress-nums').textContent=(done+1)+' / '+total;
-  document.getElementById('progress-fill').style.width=(done/total*100)+'%';
-}
-
-function onCall(){
-  setTimeout(()=>{
-    document.getElementById('outcome-section').classList.add('visible');
-    document.getElementById('next-btn').classList.add('visible');
-  },600);
-}
-
-function selectOutcome(o){
-  selectedOutcome=o;
-  ['answered','no-answer','callback','booked','dnc'].forEach(x=>
-    document.getElementById('btn-'+x).className='outcome-btn'
-  );
-  document.getElementById('btn-'+o).className='outcome-btn sel-'+o;
-}
-
-async function advance(){
-  if(!selectedOutcome){ showToast('Select an outcome first'); return; }
-  const c=currentLeads[currentIndex];
-  if(!c){ showToast('No contact'); return; }
-  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-
-  let updates;
-  if(selectedOutcome==='dnc'){
-    updates={status:'dnc',outcome:'dnc',date_called:now};
-  } else if(selectedOutcome==='booked'){
-    const t=new Date();
-    updates={outcome:'booked',status:'booked',date_called:now,
-      date_booked:t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
-  } else {
-    updates={outcome:selectedOutcome,status:'called',date_called:now};
-  }
-
-  const {error,data:updated}=await sb.from('leads').update(updates).eq('id',c.id).select();
-  if(error){ showToast('Save failed: '+error.message,4000); return; }
-  if(!updated||!updated.length){ showToast('Save failed — 0 rows matched',4000); return; }
-
-  showToast(selectedOutcome==='dnc'?'Marked DNC':selectedOutcome==='booked'?'Booked ✓':'Logged: '+selectedOutcome);
-
-  const idx=allLeadsForDate.findIndex(r=>r.id===c.id);
-  if(idx>-1) Object.assign(allLeadsForDate[idx], updates);
-
-  currentLeads=allLeadsForDate.filter(isPending);
-  if(currentIndex>=currentLeads.length) currentIndex=Math.max(0,currentLeads.length-1);
-  if(currentLeads.length===0){ showDone(); return; }
-  renderContact();
-}
-
-// ── DONE ──
-function showDone(){
-  document.getElementById('done-title').textContent=(currentUser==='joey'?'Joey':'John')+' — Done';
-  document.getElementById('done-title').className='done-title '+currentUser;
-  document.getElementById('done-sub').textContent='All leads for '+fmtDate(dialerDate)+' completed.';
-  showScreen('done-screen');
-}
-
-// ── LOG ──
-async function showLog(){
-  showScreen('log-screen');
-
-  // Fetch all distinct dates that have leads
-  const {data:allRows}=await sb.from('leads')
-    .select('date_added')
-    .order('date_added',{ascending:false});
-
-  const allDates=[...new Set((allRows||[]).map(r=>r.date_added))].sort().reverse();
-
-  if(!allDates.length){
-    document.getElementById('log-date-tabs').innerHTML='';
-    document.getElementById('log-list').innerHTML='<div class="empty-state">No leads uploaded yet.</div>';
-    return;
-  }
-
-  // If logDate isn't set or isn't in the list, default to most recent
-  if(!logDate||!allDates.includes(logDate)) logDate=allDates[0];
-
-  renderLogDateTabs(allDates);
-  await renderLog(logDate);
-}
-
-function renderLogDateTabs(dates){
-  const bar=document.getElementById('log-date-tabs');
-  // Log tabs use a neutral highlight (accent color)
-  bar.innerHTML=dates.map(d=>{
-    const active=d===logDate;
-    return `<button class="date-tab${active?' active joey':''}" onclick="switchLogDate('${d}')">${fmtDate(d)}</button>`;
-  }).join('');
-}
-
-async function switchLogDate(d){
-  logDate=d;
-  const tabs=document.querySelectorAll('#log-date-tabs .date-tab');
-  tabs.forEach(t=>{
-    const onclick=t.getAttribute('onclick');
-    const isActive=onclick && onclick.includes("'"+d+"'");
-    t.className='date-tab'+(isActive?' active joey':'');
   });
-  await renderLog(d);
+
+  wrap.innerHTML = `
+    <div class="user-card joey" onclick="startSession('joey')">
+      <div class="user-card-count">${d.joey.contacts.length} contacts</div>
+      <div class="user-card-name">Joey</div>
+      <div class="user-card-meta">${d.joey.log.length > 0 ? d.joey.log.length + ' called · ' + (d.joey.contacts.length - d.joey.index) + ' remaining' : (d.joey.contacts.length - d.joey.index) + ' remaining'}</div>
+    </div>
+    <div class="user-card john" onclick="startSession('john')">
+      <div class="user-card-count">${d.john.contacts.length} contacts</div>
+      <div class="user-card-name">John</div>
+      <div class="user-card-meta">${d.john.log.length > 0 ? d.john.log.length + ' called · ' + (d.john.contacts.length - d.john.index) + ' remaining' : (d.john.contacts.length - d.john.index) + ' remaining'}</div>
+    </div>`;
 }
 
-async function renderLog(date){
-  logDate=date;
-  document.getElementById('log-title').textContent='Log — '+fmtDate(date);
-
-  // Fetch ALL leads for this date — no filters
-  const {data:rows}=await sb.from('leads')
-    .select('*')
-    .eq('date_added',date)
-    .order('date_called',{ascending:false});
-
-  const all=rows||[];
-  const called=all.filter(isCalled);
-  const remaining=all.filter(isPending).length;
-
-  const stats={answered:0,'no-answer':0,callback:0,booked:0,dnc:0};
-  called.forEach(r=>{ if(stats[r.outcome]!==undefined) stats[r.outcome]++; });
-
-  document.getElementById('stat-answered').textContent=stats.answered;
-  document.getElementById('stat-no-answer').textContent=stats['no-answer'];
-  document.getElementById('stat-callback').textContent=stats.callback;
-  document.getElementById('stat-booked').textContent=stats.booked;
-  document.getElementById('stat-dnc').textContent=stats.dnc;
-  document.getElementById('remaining-count').textContent=remaining;
-
-  document.getElementById('log-list').innerHTML=called.length
-    ? called.map(r=>`
-        <div class="log-item">
-          <div class="log-info">
-            <div class="log-name">${r.name||'—'}</div>
-            <div class="log-sub">${r.job||''}${r.city?' · '+r.city:''} · ${r.assigned_to}</div>
-          </div>
-          <div class="log-right">
-            <span class="log-badge ${r.outcome}">${r.outcome}</span>
-            <span class="log-time">${r.date_called||''}</span>
-          </div>
-        </div>`).join('')
-    : '<div class="empty-state">No calls logged for this day.</div>';
-}
-
-// ── BOOKED ──
-async function showBooked(){
-  showScreen('booked-screen');
-  const {data}=await sb.from('leads')
-    .select('*')
-    .eq('status','booked')
-    .order('date_booked',{ascending:false});
-  const rows=data||[];
-  document.getElementById('booked-list').innerHTML=rows.length
-    ? rows.map(r=>`
-        <div class="booked-item">
-          <div class="booked-name">${r.name||'—'}</div>
-          <div class="booked-phone">${fmtPhone(r.phone)}</div>
-          <div class="booked-meta">
-            <span class="booked-tag job">${r.job||'—'}</span>
-            <span class="booked-tag info">${r.assigned_to}</span>
-            <span class="booked-tag info">${r.date_booked||'—'}</span>
-            ${r.city?`<span class="booked-tag info">${r.city}</span>`:''}
-          </div>
-        </div>`).join('')
-    : '<div class="empty-state">No booked leads yet.</div>';
-}
-
-// ── ADMIN ──
-function showAdmin(){ showScreen('admin-screen'); if(adminLoggedIn) showAdminDash(); }
-
-function doLogin(){
-  const u=document.getElementById('admin-user').value.trim();
-  const p=document.getElementById('admin-pass').value;
-  if(u===ADMIN_USER&&p===ADMIN_PASS){
-    adminLoggedIn=true;
-    document.getElementById('login-error').style.display='none';
+// ── ADMIN AUTH ──
+function doLogin() {
+  const u = document.getElementById('admin-user').value.trim();
+  const p = document.getElementById('admin-pass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    adminLoggedIn = true;
+    document.getElementById('login-error').style.display = 'none';
     showAdminDash();
   } else {
-    document.getElementById('login-error').style.display='block';
-    document.getElementById('admin-pass').value='';
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('admin-pass').value = '';
   }
 }
 
-function doLogout(){
-  adminLoggedIn=false;
-  document.getElementById('admin-user').value='';
-  document.getElementById('admin-pass').value='';
-  document.getElementById('admin-login-wrap').style.display='flex';
-  document.getElementById('admin-dash').style.display='none';
+function doLogout() {
+  adminLoggedIn = false;
+  document.getElementById('admin-user').value = '';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('admin-login').style.display = 'flex';
+  document.getElementById('admin-dash').style.display = 'none';
 }
 
-async function showAdminDash(){
-  document.getElementById('admin-login-wrap').style.display='none';
-  document.getElementById('admin-dash').style.display='flex';
-  await refreshAdminSummary();
+function showAdminDash() {
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('admin-dash').style.display = 'flex';
+  document.getElementById('admin-dash').style.flexDirection = 'column';
+  refreshAdminSummary();
 }
 
-async function refreshAdminSummary(){
-  // Show summary for the most recent upload date, not necessarily today
-  const {data:latest}=await sb.from('leads')
-    .select('date_added')
-    .order('date_added',{ascending:false})
-    .limit(1);
-  if(!latest||!latest.length) return;
-  const date=latest[0].date_added;
-
-  const {data}=await sb.from('leads')
-    .select('assigned_to,status,outcome')
-    .eq('date_added',date);
-  if(!data) return;
-
-  const jTotal=data.filter(r=>r.assigned_to==='joey').length;
-  const nTotal=data.filter(r=>r.assigned_to==='john').length;
-  const jCalled=data.filter(r=>r.assigned_to==='joey'&&isCalled(r)).length;
-  const nCalled=data.filter(r=>r.assigned_to==='john'&&isCalled(r)).length;
-
-  if(jTotal||nTotal){
-    document.getElementById('today-summary').style.display='block';
-    document.getElementById('summary-joey').textContent=jTotal+' contacts · '+jCalled+' called';
-    document.getElementById('summary-john').textContent=nTotal+' contacts · '+nCalled+' called';
+function refreshAdminSummary() {
+  const today = todayKey();
+  const d = appData.days[today];
+  const summaryEl = document.getElementById('today-summary');
+  if (d) {
+    summaryEl.style.display = 'block';
+    document.getElementById('summary-joey').textContent = d.joey.contacts.length + ' contacts · ' + d.joey.log.length + ' called';
+    document.getElementById('summary-john').textContent = d.john.contacts.length + ' contacts · ' + d.john.log.length + ' called';
+  } else {
+    summaryEl.style.display = 'none';
   }
 }
 
 // ── CSV UPLOAD ──
-document.getElementById('csv-input').addEventListener('change',function(e){
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=ev=>parseAndUploadCSV(ev.target.result); r.readAsText(f);
-  this.value='';
+document.getElementById('csv-input').addEventListener('change', function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = ev => parseCSV(ev.target.result); r.readAsText(f);
+  this.value = '';
 });
 
-const dz=document.getElementById('drop-zone');
-dz.addEventListener('dragover',e=>{ e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
-dz.addEventListener('drop',e=>{
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag');
-  const f=e.dataTransfer.files[0];
-  if(f){ const r=new FileReader(); r.onload=ev=>parseAndUploadCSV(ev.target.result); r.readAsText(f); }
+  const f = e.dataTransfer.files[0];
+  if (f) { const r = new FileReader(); r.onload = ev => parseCSV(ev.target.result); r.readAsText(f); }
 });
 
-function parseCSVLine(line){
-  const res=[]; let cur='', inQ=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
-    if(c==='"'){ inQ=!inQ; }
-    else if(c===','&&!inQ){ res.push(cur.trim()); cur=''; }
-    else{ cur+=c; }
+function parseCSVLine(line) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { res.push(cur); cur = ''; }
+    else { cur += c; }
   }
-  res.push(cur.trim()); return res;
+  res.push(cur); return res;
 }
 
-function detectFormat(lines){
-  const sample=lines.slice(0,5).map(parseCSVLine);
-  const hasHeader=/name|phone|job|service|type/i.test(lines[0]);
-  const dataRows=hasHeader?sample.slice(1):sample;
-  const headerCols=hasHeader?sample[0].map(h=>h.toLowerCase()):[];
-  let namCol=-1,jobCol=-1,phoneCol=-1,cityCol=-1;
-  headerCols.forEach((h,i)=>{
-    if(/^name$|^full.?name/.test(h)) namCol=i;
-    if(/job|service|type|product/.test(h)) jobCol=i;
-    if(/phone|cell|mobile/.test(h)) phoneCol=i;
-    if(/city|location/.test(h)) cityCol=i;
-  });
-  const firstData=dataRows[0]||[];
-  if(phoneCol===-1){
-    firstData.forEach((v,i)=>{
-      const d=v.replace(/\D/g,'');
-      if(d.length>=9&&d.length<=15&&phoneCol===-1) phoneCol=i;
-    });
-  }
-  if(namCol===-1){
-    const c3=(firstData[3]||'').replace(/\D/g,'');
-    const c4=(firstData[4]||'').replace(/\D/g,'');
-    if(firstData.length>=9&&(c3.length>=9||c4.length>=9)){
-      return{namCol:1,jobCol:3,phoneCol:c3.length>=9?3:4,cityCol:8,skip:hasHeader?1:0};
-    }
-    if(c3.length>=9) return{namCol:0,jobCol:2,phoneCol:3,cityCol:5,skip:hasHeader?1:0};
-  }
-  return{
-    namCol:namCol>-1?namCol:0,
-    jobCol:jobCol>-1?jobCol:1,
-    phoneCol:phoneCol>-1?phoneCol:3,
-    cityCol:cityCol>-1?cityCol:5,
-    skip:hasHeader?1:0
-  };
-}
-
-async function parseAndUploadCSV(text){
-  const eb=document.getElementById('error-bar'), suc=document.getElementById('upload-success');
-  eb.style.display='none'; suc.style.display='none';
-  const lines=text.split(/\r?\n/).filter(l=>l.trim());
-  if(!lines.length){ eb.textContent='Empty file.'; eb.style.display='block'; return; }
-
-  const fmt=detectFormat(lines);
-  const contacts=[]; const seen=new Set();
-
-  for(const line of lines.slice(fmt.skip)){
-    const cols=parseCSVLine(line);
-    if(cols.length<2) continue;
-    const name=(cols[fmt.namCol]||'').trim();
-    if(!name||/^phone\s*call/i.test(name)||name.toLowerCase()==='name') continue;
-    const job=(cols[fmt.jobCol]||'').trim();
-    const rawCity=(cols[fmt.cityCol]||'').trim();
-    const city=rawCity.replace(/\s*(ca|california)\s*\d*/gi,'').replace(/\s+/g,' ').replace(/[,.]$/,'').trim();
-    const phone=(cols[fmt.phoneCol]||'').replace(/\D/g,'');
-    if(phone.length<7) continue;
-    if(seen.has(phone)) continue;
-    seen.add(phone);
-    contacts.push({name,job,phone,city});
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const contacts = [];
+  for (const line of lines) {
+    const cols = parseCSVLine(line);
+    if (cols.length < 5) continue;
+    const name = (cols[1] || '').trim();
+    if (!name || name.toLowerCase() === 'name') continue;
+    const job = (cols[3] || '').trim();
+    const phone = (cols[4] || '').replace(/\D/g,'');
+    const city = (cols[8] || '').trim();
+    if (phone.length < 7 || !name) continue;
+    contacts.push({ name, job, phone, city });
   }
 
-  if(!contacts.length){ eb.textContent='No valid contacts found.'; eb.style.display='block'; return; }
+  const eb = document.getElementById('error-bar');
+  const suc = document.getElementById('upload-success');
 
-  // Check for existing DNC leads so we don't re-add them
-  const phones=contacts.map(c=>c.phone);
-  const {data:existing}=await sb.from('leads').select('phone,status').in('phone',phones);
-  const dncPhones=new Set((existing||[]).filter(r=>r.status==='dnc').map(r=>String(r.phone)));
-  const filtered=contacts.filter(c=>!dncPhones.has(c.phone));
-
-  if(!filtered.length){ eb.textContent='All contacts are on the DNC list.'; eb.style.display='block'; return; }
-
-  // Build today's date string in local time — YYYY-MM-DD
-  const now=new Date();
-  const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-
-  const rows=filtered.map((c,i)=>({
-    name:c.name, job:c.job, phone:c.phone, city:c.city,
-    assigned_to: i%2===0 ? 'joey' : 'john',
-    status: 'pending',
-    date_added: today,
-    upload_date: today
-  }));
-
-  // Insert in batches of 50 to avoid payload limits
-  let inserted=0;
-  let lastError=null;
-  for(let i=0;i<rows.length;i+=50){
-    const batch=rows.slice(i,i+50);
-    const {error}=await sb.from('leads').insert(batch);
-    if(error){ lastError=error; }
-    else { inserted+=batch.length; }
-  }
-
-  if(inserted===0&&lastError){ eb.textContent='Upload failed: '+lastError.message; eb.style.display='block'; return; }
-
-  const skippedDnc=contacts.length-filtered.length;
-
-  await refreshAdminSummary();
-  await loadHomeData();
-
-  const jC=rows.filter(r=>r.assigned_to==='joey').length;
-  const nC=rows.filter(r=>r.assigned_to==='john').length;
-  let msg=`✓ ${inserted} contacts uploaded — ${jC} Joey · ${nC} John`;
-  if(skippedDnc) msg+=` · ${skippedDnc} DNC skipped`;
-  if(lastError) msg+=` · some rows failed`;
-  suc.textContent=msg;
-  suc.style.display='block';
-  setTimeout(()=>suc.style.display='none',5000);
-}
-
-// ── EXPORT ──
-async function exportLog(){
-  const {data}=await sb.from('leads')
-    .select('*')
-    .eq('date_added',logDate)
-    .not('outcome','is',null);
-  if(!data?.length){ showToast('Nothing to export'); return; }
-  const rows=[['Name','Job','City','Phone','Assigned To','Outcome','Call Time','Date']];
-  data.forEach(r=>rows.push([r.name,r.job,r.city,r.phone,r.assigned_to,r.outcome,r.date_called,r.date_added]));
-  const csv=rows.map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  a.download='log-'+logDate+'.csv'; a.click();
-}
-
-// ── DEDUP ──
-async function deleteDuplicates(){
-  const el=document.getElementById('dedup-result');
-  el.style.display='block';
-  el.style.color='var(--muted2)';
-  el.textContent='Scanning for duplicates...';
-
-  // Fetch all leads — just id and phone
-  const {data, error}=await sb.from('leads').select('id,phone,status');
-  if(error||!data){ el.textContent='Error fetching leads.'; el.style.color='var(--danger)'; return; }
-
-  // Group by phone number — keep the first, collect rest for deletion
-  const seen={};
-  const toDelete=[];
-  for(const row of data){
-    const phone=String(row.phone||'').replace(/\D/g,'');
-    if(!phone) continue;
-    if(seen[phone]){
-      toDelete.push(phone);
-    } else {
-      seen[phone]=true;
-    }
-  }
-
-  if(!toDelete.length){
-    el.textContent='No duplicates found.';
-    el.style.color='var(--good)';
+  if (!contacts.length) {
+    eb.textContent = 'No valid contacts found. Check your CSV format.';
+    eb.style.display = 'block';
+    suc.style.display = 'none';
     return;
   }
 
-  // Delete duplicates — for each dup phone, keep the first row and delete the rest
-  // Re-fetch grouped by phone to get all ids per phone
-  let deleted=0;
-  const dupPhones=[...new Set(toDelete)];
-  for(const phone of dupPhones){
-    const {data:matches}=await sb.from('leads').select('id').eq('phone',phone);
-    if(matches&&matches.length>1){
-      // Keep first, delete rest
-      const idsToRemove=matches.slice(1).map(r=>r.id);
-      for(const rid of idsToRemove){
-        const {error:delErr}=await sb.from('leads').delete().eq('id',rid);
-        if(!delErr) deleted++;
-      }
+  eb.style.display = 'none';
+
+  const today = todayKey();
+  const joey = contacts.filter((_, i) => i % 2 === 0);
+  const john = contacts.filter((_, i) => i % 2 === 1);
+  const existing = appData.days[today] || {};
+
+  appData.days[today] = {
+    joey: { contacts: joey, log: (existing.joey||{}).log||[], index: (existing.joey||{}).index||0 },
+    john: { contacts: john, log: (existing.john||{}).log||[], index: (existing.john||{}).index||0 }
+  };
+
+  saveData();
+  renderTMCards();
+  refreshAdminSummary();
+
+  suc.textContent = '✓ ' + contacts.length + ' contacts loaded — ' + joey.length + ' for Joey, ' + john.length + ' for John.';
+  suc.style.display = 'block';
+  setTimeout(() => suc.style.display = 'none', 4000);
+}
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goHome() { showScreen('landing-screen'); renderTMCards(); }
+
+// ── SESSION ──
+function startSession(user) {
+  const today = todayKey();
+  if (!appData.days[today]) return;
+  currentUser = user; currentDateKey = today; selectedOutcome = null;
+  const isJoey = user === 'joey';
+  document.getElementById('dialer-who').textContent = isJoey ? 'Joey' : 'John';
+  document.getElementById('dialer-who').className = 'dialer-who ' + user;
+  document.getElementById('progress-fill').className = 'progress-bar-fill ' + user;
+  document.getElementById('card-top').className = 'contact-card-top ' + user;
+  document.getElementById('c-job').className = 'tag job' + (isJoey ? '' : ' john-user');
+  document.getElementById('call-btn').className = 'call-btn' + (isJoey ? '' : ' john-user');
+  document.getElementById('done-export').className = 'btn-primary' + (isJoey ? '' : ' john-user');
+  showScreen('dialer-screen');
+  renderContact();
+}
+
+function getUserData() { return appData.days[currentDateKey][currentUser]; }
+
+// ── DIALER ──
+function renderContact() {
+  const ud = getUserData();
+  if (ud.index >= ud.contacts.length) { showDone(); return; }
+  const c = ud.contacts[ud.index];
+  document.getElementById('c-name').textContent = c.name;
+  document.getElementById('c-job').textContent = c.job || '—';
+  document.getElementById('c-city').textContent = c.city || '—';
+  document.getElementById('c-number').textContent = fmtPhone(c.phone);
+  document.getElementById('call-btn').href = 'tel:' + c.phone;
+  const total = ud.contacts.length;
+  document.getElementById('progress-nums').textContent = (ud.index + 1) + ' / ' + total;
+  document.getElementById('progress-fill').style.width = (ud.index / total * 100) + '%';
+  selectedOutcome = null;
+  document.getElementById('outcome-section').classList.remove('visible');
+  document.getElementById('next-btn').classList.remove('visible');
+  ['answered','no-answer','callback'].forEach(o => document.getElementById('btn-'+o).className = 'outcome-btn');
+}
+
+function onCall() {
+  setTimeout(() => {
+    document.getElementById('outcome-section').classList.add('visible');
+    document.getElementById('next-btn').classList.add('visible');
+  }, 600);
+}
+
+function selectOutcome(o) {
+  selectedOutcome = o;
+  ['answered','no-answer','callback'].forEach(x => document.getElementById('btn-'+x).className = 'outcome-btn');
+  document.getElementById('btn-'+o).className = 'outcome-btn sel-'+o;
+}
+
+function advance() {
+  const ud = getUserData();
+  const c = ud.contacts[ud.index];
+  ud.log.push({ name:c.name, job:c.job, city:c.city, phone:c.phone, outcome:selectedOutcome||'pending', time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) });
+  ud.index++;
+  saveData();
+  renderContact();
+}
+
+// ── LOG ──
+function showLog() { logViewDate = currentDateKey; renderLog(); showScreen('log-screen'); }
+function backToDialer() { showScreen('dialer-screen'); }
+
+function renderLog() {
+  const isJoey = currentUser === 'joey';
+  document.getElementById('log-title').textContent = (isJoey ? 'Joey' : 'John') + ' — Log';
+  document.getElementById('log-title').className = 'log-title ' + currentUser;
+  const dates = Object.keys(appData.days).sort().reverse();
+  document.getElementById('date-tabs').innerHTML = dates.map(d => `
+    <button class="date-tab${d===logViewDate?' active '+currentUser:''}" onclick="switchLogDate('${d}')">
+      ${d===todayKey()?'Today':friendlyDate(d)}
+    </button>`).join('');
+  renderLogForDate(logViewDate);
+}
+
+function switchLogDate(dk) {
+  logViewDate = dk;
+  document.querySelectorAll('.date-tab').forEach(t => {
+    const label = t.textContent.trim();
+    const match = (dk===todayKey() && label==='Today') || label===friendlyDate(dk);
+    t.className = 'date-tab' + (match ? ' active '+currentUser : '');
+  });
+  renderLogForDate(dk);
+}
+
+function renderLogForDate(dk) {
+  const day = appData.days[dk]; if (!day) return;
+  const ud = day[currentUser];
+  const log = ud.log;
+  const stats = {answered:0,'no-answer':0,callback:0};
+  log.forEach(l => { if(stats[l.outcome]!==undefined) stats[l.outcome]++; });
+  document.getElementById('stat-answered').textContent = stats.answered;
+  document.getElementById('stat-no-answer').textContent = stats['no-answer'];
+  document.getElementById('stat-callback').textContent = stats.callback;
+  document.getElementById('remaining-count').textContent = ud.contacts.length - ud.index;
+  let html = '';
+  if (log.length) {
+    html += '<div class="log-section-title">Called (' + log.length + ')</div>';
+    html += log.slice().reverse().map(e => `<div class="log-item"><div class="log-info"><div class="log-name">${e.name}</div><div class="log-sub">${e.job}${e.city?' · '+e.city:''}</div></div><div class="log-right"><span class="log-badge ${e.outcome}">${e.outcome}</span><span class="log-time">${e.time}</span></div></div>`).join('');
+  }
+  if (dk === todayKey() && dk === currentDateKey) {
+    const up = ud.contacts.slice(ud.index);
+    if (up.length) {
+      html += '<div class="log-section-title">Remaining (' + up.length + ')</div>';
+      html += up.map(c => `<div class="log-item"><div class="log-info"><div class="log-name">${c.name}</div><div class="log-sub">${c.job}${c.city?' · '+c.city:''}</div></div><div class="log-right"><span class="log-badge upcoming">upcoming</span></div></div>`).join('');
     }
   }
+  if (!html) html = '<div style="padding:2rem;text-align:center;font-family:IBM Plex Mono,monospace;font-size:.75rem;color:var(--muted)">No calls logged for this day.</div>';
+  document.getElementById('log-list').innerHTML = html;
+}
 
-  el.textContent=`✓ Removed ${deleted} duplicate${deleted===1?'':'s'}.`;
-  el.style.color='var(--good)';
-  await loadHomeData();
+// ── DONE ──
+function showDone() {
+  const ud = getUserData();
+  const stats = {answered:0,'no-answer':0,callback:0};
+  ud.log.forEach(l => { if(stats[l.outcome]!==undefined) stats[l.outcome]++; });
+  document.getElementById('done-title').textContent = (currentUser==='joey'?'Joey':'John') + ' — Done';
+  document.getElementById('done-title').className = 'done-title ' + currentUser;
+  document.getElementById('done-sub').textContent = ud.log.length + ' calls completed\n' + stats.answered + ' answered · ' + stats['no-answer'] + ' no answer · ' + stats.callback + ' callback';
+  showScreen('done-screen');
+}
+
+// ── EXPORT ──
+function exportLog() {
+  const dk = logViewDate || currentDateKey;
+  const ud = (appData.days[dk]||{})[currentUser]; if (!ud) return;
+  const rows = [['Name','Job','City','Phone','Outcome','Time']];
+  ud.log.forEach(l => rows.push([l.name,l.job,l.city,l.phone,l.outcome,l.time]));
+  const csv = rows.map(r => r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = currentUser + '-' + dk + '.csv';
+  a.click();
+}
+
+function fmtPhone(n) {
+  if (n.length===10) return '('+n.slice(0,3)+') '+n.slice(3,6)+'-'+n.slice(6);
+  if (n.length===11&&n[0]==='1') return '+1 ('+n.slice(1,4)+') '+n.slice(4,7)+'-'+n.slice(7);
+  return n;
 }
 
 init();
